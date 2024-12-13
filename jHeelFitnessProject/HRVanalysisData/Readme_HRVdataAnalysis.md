@@ -72,3 +72,16 @@ Monitor autonomic nervous system balance
 Track stress levels
 Assess recovery status
 Optimize training based on HRV patterns
+
+
+
+####################################
+A typical recovery score in HRV tracking would usually be a composite metric calculated from multiple HRV-related parameters like:
+
+HRV value
+RMSSD (Root Mean Square of Successive Differences)
+pNN50 (Percentage of NN intervals differing by more than 50ms)
+SDNN (Standard Deviation of NN intervals)
+Current HRV compared to baseline
+
+
