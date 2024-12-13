@@ -35,8 +35,9 @@ def print_all_fields(fit_file_path):
 logging.info('Starting RunninAnalysis Script...')
 print('Starting RunninAnalysis script...')
 
+
 def create_table_if_not_exists():
-    conn = sqlite3.connect(r'e:/jheel_dev/dev_learn/dbs/running_analysis.db')
+    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/running_analysis.db')
     cursor = conn.cursor()
 
     # Drop and create RunningAnalysis table
@@ -98,7 +99,7 @@ def parse_fit_file(file_path, activity_id):
 
 
 def insert_data_into_db(data):
-    conn = sqlite3.connect('e:/jheel_dev/dev_learn/dbs/running_analysis.db')
+    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/running_analysis.db')
     cursor = conn.cursor()
 
     try:

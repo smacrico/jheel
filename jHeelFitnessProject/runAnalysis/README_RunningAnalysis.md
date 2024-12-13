@@ -34,6 +34,8 @@ def track_performance_over_time(running_economy, vo2max, distance, time):
 
 
 
+
+
 ###### Applications
 
 Training Zone Optimization:
@@ -83,3 +85,27 @@ The visualizations will help you:
                 Spot correlations between different metrics
                 Track improvements over time
                 Plan training intensities based on your zones
+
+
+## This implementation provides: (training Score Calculatio)
+
+A comprehensive training score (0-100 scale)
+Normalized and weighted metrics
+Detailed breakdown of each performance metric
+Performance trend analysis
+
+Key features:
+
+Considers multiple metrics (running economy, VO2 max, distance, efficiency, heart rate)
+Normalizes metrics to create a fair comparison
+Applies different weights to each metric
+Provides both overall score and detailed metric breakdown
+Analyzes performance trends over time
+
+The score considers:
+
+Higher running economy is better
+Higher VO2 max is better
+Longer distances are better
+Higher efficiency score is better
+Lower heart rate is better
