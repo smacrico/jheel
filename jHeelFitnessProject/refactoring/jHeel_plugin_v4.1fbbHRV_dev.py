@@ -62,13 +62,14 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                 
                 cursor.execute('''
                     INSERT INTO hrv_sessionsDEV (
-                        activity_id, timestamp, min_hr, hrv_rmssd, hrv_sdrr_f, 
+                        activity_id, timestamp, sport, min_hr, hrv_rmssd, hrv_sdrr_f, 
                         hrv_sdrr_l, hrv_pnn50, hrv_pnn20, session_hrv, NN50, NN20, armssd, asdnn, SaO2, trnd_hrv, recovery
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
                 ''', (
                     activity_id,
                     fields.get('timestamp'),
+                    fields.get('sport'),
                     fields.get('dev_min_hr'),
                     fields.get('dev_hrv_rmssd'),
                     fields.get('dev_hrv_sdrr_f'),
@@ -129,6 +130,7 @@ def create_table_if_not_exists():
         CREATE TABLE IF NOT EXISTS hrv_sessionsDEV (
             activity_id TEXT PRIMARY KEY,
             timestamp TEXT,
+            sport TEXT,
             min_hr INTEGER,
             hrv_rmssd INTEGER,
             hrv_sdrr_f INTEGER,
@@ -146,13 +148,14 @@ def create_table_if_not_exists():
         )
     ''')
 
-    # Create main ArtemistblV4 the Production - main table
+    # Create main ArtemistblV41dev the Production - main table
    
    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS ArtemistblV41dev (
             activity_id INT PRIMARY KEY,
             timestamp TEXT,
+            sport TEXT,
             distance REAL,
             hrv INT,
             fat INT,
@@ -263,6 +266,7 @@ def parse_fit_file(file_path, activity_id):
                 field_dict = {field.name: field.value for field in fields}
                 
                 timestamp = field_dict.get('timestamp')
+                sport = field_dict.get('sport')
                 activity_id = activity_id
                 distance = field_dict.get('total_distance')
                 hrv = field_dict.get('HRV')
@@ -309,6 +313,7 @@ def parse_fit_file(file_path, activity_id):
                 session_data.append({
                     'activity_id': activity_id,
                     'timestamp': timestamp, # '2021-09-01 12:00:00
+                    'sport': sport,
                     'distance': distance,
                     'hrv': hrv,
                     'fat': fat,
@@ -399,9 +404,9 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO ArtemistblV41dev (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?)
-        ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
+            INSERT OR REPLACE INTO ArtemistblV41dev (activity_id, timestamp, distance, sport, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ''', (session['activity_id'], session['timestamp'],session['distance'], session['sport'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
               session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
               session['MeanRR'], session['MeanHR']))
 

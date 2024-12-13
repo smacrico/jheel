@@ -1,9 +1,9 @@
 # this file is used to parse the fit file and store the dev_data in the database
 """ stelios (c) steliosmacrico "jHeel 2024 creating plugin"""
 
-#################################
-"Developemtn and testing verison"
-#################################
+##################################
+"Developement and testing verison"####
+##################################
 
 import sqlite3
 import os
