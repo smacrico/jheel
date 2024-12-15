@@ -1,9 +1,9 @@
 # this file is used to parse the fit file and store the dev_data in the database
 """ stelios (c) steliosmacrico "jHeel 2024 creating plugin"""
 
-##################################
+######################################
 "Developement and testing verison"####
-##################################
+######################################
 
 import sqlite3
 import os
@@ -77,7 +77,7 @@ def create_table_if_not_exists():
             HF INT,
             VLF INT,
             pNN50 INT, 
-            LFnu INT, HFnu INT,MeanHR INT, MeanRR INT
+            LFnu INT, HFnu INT,MeanHR INT, MeanRR INT, Running_Economy TXT
         )
     ''')
     
@@ -86,23 +86,6 @@ def create_table_if_not_exists():
     conn.commit()
     conn.close()
 
-#create view to join activities and garmin tables
-
-def create_view_if_not_exists():
-    conn = sqlite3.connect('jheel_dev/DataBasesDev/artemis.db')
-    cursor = conn.cursor()
-
-    logging.info('Creating view...')
-    cursor.execute('''
-        CREATE VIEW IF NOT EXISTS activities_view AS
-        SELECT s.*
-        FROM Artemistbl_mariner s
-        JOIN activitis.avtivity_id ON s.activity_id = g.activity_id
-    ''')
-
-    conn.commit()
-    conn.close()
-    logging.info('View created successfully.')
 
 # Parse all .fit files in the specified folder (folder_path)
 from fitparse import FitFile
@@ -183,6 +166,7 @@ def parse_fit_file(file_path, activity_id):
                 HFnu = field_dict.get('HFnu')
                 MeanHR = field_dict.get('Mean HR')
                 MeanRR = field_dict.get('Mean RR')
+                Running_Economy = field_dict.get('Running Economy')
 
                 if steps is None:
                     steps = field_dict.get('steps')
@@ -228,7 +212,8 @@ def parse_fit_file(file_path, activity_id):
                     'LFnu'  : LFnu,
                     'HFnu' : HFnu,
                     'MeanHR' : MeanHR,
-                    'MeanRR' : MeanRR
+                    'MeanRR' : MeanRR,
+                    'Running Economy' : Running_Economy
 
                 })
                 
@@ -246,7 +231,7 @@ def insert_data_into_db(data):
     # Specify the fields you care about
     specific_fields = ['fat','Total Fat','Carbs','Total Carbs',
                     'VO2maxSmooth','sport',
-                    'VO2maxSession',
+                    'VO2maxSession', 'timestamp',
                     'CardiacDrift',
                     'CooperTest',
                     'Steps',
@@ -271,7 +256,7 @@ def insert_data_into_db(data):
                     'SD1',
                     'LF',
                     'HF',
-                    'VLF','pNN50','LFnu','HFnu','MeanHR', 'MeanRR']  # Replace with your specific fields
+                    'VLF','pNN50','LFnu','HFnu','MeanHR', 'MeanRR', 'Running Economy']  # Replace with your specific fields
 
     for session in data:
         # Check if all specific fields in the session dictionary are None
@@ -281,27 +266,28 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?)
         ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['sport'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
-              session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
-              session['MeanRR'], session['MeanHR']))
+              session ['timestamp'],session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
+              session['MeanRR'], session['MeanHR'], session['Running Economy']))
 
     conn.commit()
     conn.close()
 
 #create view to join activities and garmin tables
-def create_view():
+def create_view_if_not_exists():
     # conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
-    conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
-    # conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis.db')
+    # conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
+    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis.db')
     cursor = conn.cursor()
 
     cursor.execute('''
-        CREATE VIEW IF NOT EXISTS Artemistbl_view AS
+        CREATE VIEW IF NOT EXISTS RunMariner_view AS
         SELECT activities.*
         FROM activities
         INNER JOIN Artemistbl_mariner ON activities.activity_id = Artemistbl_mariner.activity_id
+        where Artemistbl_mariner.sport == "running" ORDER BY Artemistbl_mariner.timestamp DESC
     ''')
     
     logging.info('View created successfully.')
@@ -314,7 +300,7 @@ if __name__ == "__main__":
     # create view and table
     create_table_if_not_exists()
     # create_view()
-    # create_view_if_not_exists()
+    create_view_if_not_exists()
     # all_session_data = parse_all_fit_files_in_folder('c:/steliosdev/jheel_dev/devinout/testfit')
     all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activitiesTEST')
     # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
