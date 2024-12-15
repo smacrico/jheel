@@ -14,6 +14,7 @@ try:
     cursor_artemis.execute('''
         SELECT runingdatacolumn1, runningdataacolumn2 
         FROM some_table  # Replace with actual table name
+        WHERE sport like '%run%'
     ''')
 
     # Fetch all the rows
