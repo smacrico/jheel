@@ -1,3 +1,4 @@
+
 # this file is used to parse the fit file and store the dev_data in the database
 """ stelios (c) steliosmacrico "jHeel 2024 creating plugin"""
 
@@ -43,6 +44,8 @@ def create_table_if_not_exists():
             activity_id INT PRIMARY KEY,
             timestamp TEXT,
             sport TEXT,
+            avg_heart_rate INT,
+            total_elapsed_time INT,
             distance REAL,
             hrv INT,
             fat INT,
@@ -127,6 +130,8 @@ def parse_fit_file(file_path, activity_id):
                 
                 timestamp = field_dict.get('timestamp')
                 sport = field_dict.get('sport')
+                avg_heart_rate = field_dict.get('avg_heart_rate')
+                total_elapsed_time = field_dict.get('total_elapsed_time')
                 activity_id = activity_id
                 distance = field_dict.get('total_distance')
                 hrv = field_dict.get('HRV')
@@ -175,6 +180,8 @@ def parse_fit_file(file_path, activity_id):
                     'activity_id': activity_id,
                     'timestamp': timestamp, # '2021-09-01 12:00:00
                     'sport': sport,
+                    'avg_heart_rate': avg_heart_rate,
+                    'total_elapsed_time': total_elapsed_time,
                     'distance': distance,
                     'hrv': hrv,
                     'fat': fat,
@@ -231,6 +238,7 @@ def insert_data_into_db(data):
     # Specify the fields you care about
     specific_fields = ['fat','Total Fat','Carbs','Total Carbs',
                     'VO2maxSmooth','sport',
+                    'avg_heart_rate', 'total_elapsed_time',
                     'VO2maxSession', 'timestamp',
                     'CardiacDrift',
                     'CooperTest',
@@ -266,9 +274,11 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
-            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?)
-        ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['sport'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
+            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, avg_heart_rate, total_elapsed_time, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['sport'], 
+              session['avg_heart_rate'], session['total_elapsed_time'],
+              session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
               session ['timestamp'],session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
               session['MeanRR'], session['MeanHR'], session['Running Economy']))
 
