@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
 from datetime import datetime
-
+0
 class RunningAnalysis:
     def __init__(self, db_path):
         self.db_path = db_path

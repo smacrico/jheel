@@ -16,7 +16,7 @@ now = datetime.datetime.now()
 timestamp = now.strftime('%Y%m%d_%H%M%S')
 
 # Include the timestamp in the log file name
-logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Plugins/Logs/DEV_jheel_parse_fbbHRV{timestamp}.log', level=logging.INFO)
+logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Logs_Dev/DEV_jheel_parse_fbbHRV{timestamp}.log', level=logging.INFO)
 
 # Include the timestamp in the log file name
 logging.info('Starting script...')
@@ -51,7 +51,7 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                     fields.get('RRint'),
                     fields.get('hrv'),
                     fields.get('rmssd'),
-                    fields.get('sdnn'),
+                    fields.get('SDNN'),
                     fields.get('SaO2_C')
                 ))
                 record_num += 1
@@ -63,9 +63,9 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                 cursor.execute('''
                     INSERT INTO hrv_sessionsDEV (
                         activity_id, timestamp, sport, min_hr, hrv_rmssd, hrv_sdrr_f, 
-                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20, session_hrv, NN50, NN20, armssd, asdnn, SaO2, trnd_hrv, recovery
+                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20, session_hrv, NN50, NN20, armssd, asdnn, SaO2, trnd_hrv, recovery, sdnn, sdsd
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)
                 ''', (
                     activity_id,
                     fields.get('timestamp'),
@@ -83,7 +83,9 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                     fields.get('asdnn'),
                     fields.get('SaO2'),
                     fields.get('trnd_hrv'),
-                    fields.get('recovery')
+                    fields.get('recovery'),
+                    fields.get('SDNN'),
+                    fields.get('SDSD')
                 ))
         
         conn.commit()
@@ -144,7 +146,9 @@ def create_table_if_not_exists():
             asdnn INTEGER,
             SaO2 INTEGER,
             trnd_hrv INTEGER,
-            recovery INTEGER
+            recovery INTEGER,
+            sdnn INT,
+            sdsd INT
         )
     ''')
 
@@ -198,27 +202,6 @@ def create_table_if_not_exists():
 
     conn.commit()
     conn.close()
-
-#create view to join activities and garmin tables
-
-#def create_view_if_not_exists():
-#    conn = sqlite3.connect(r'c:/steliosdev/jheel_dev/dev_learn/dbs/artemis_hrv.db')
-#    cursor = conn.cursor()
-
-#    logging.info('Creating view...')
-#    cursor.execute('''
-#        CREATE VIEW IF NOT EXISTS activities_view AS
-#        SELECT s.*
-#        FROM ArtemistblV41dev s
-#        JOIN activitis.avtivity_id ON s.activity_id = g.activity_id
-#    ''')
-
-#    conn.commit()
-#    conn.close()
-#    logging.info('View created successfully.')
-
-
-
 
 # Parse all .fit files in the specified folder (folder_path)
 from fitparse import FitFile
@@ -413,25 +396,6 @@ def insert_data_into_db(data):
     conn.commit()
     conn.close()
 
-#create view to join activities and garmin tables
-
-#def create_view():
-    # conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
-#    conn = sqlite3.connect('c:/steliosdev/jheel_dev/dev_learn/dbs/artemis_hrv.db')
-#    cursor = conn.cursor()
-
-#    cursor.execute('''
-#        CREATE VIEW IF NOT EXISTS ArtemistblV41dev View AS
-#        SELECT activities.*
-#        FROM activities
-#        INNER JOIN ArtemistblV2prod ON activities.activity_id = Artemistbl41dev.activity_id
-#    ''')
-    
-#    logging.info('View DEV test created successfully.')
-
-#    conn.commit()
-#    conn.close()
-    
 
 # run the script as wanted - main function - jHeel artemis data
 if __name__ == "__main__":  
