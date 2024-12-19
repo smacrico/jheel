@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
 from datetime import datetime
-0
+
 class RunningAnalysis:
     def __init__(self, db_path):
         self.db_path = db_path
@@ -314,26 +314,88 @@ def main():
     # Visualize advanced metrics
     analysis.advanced_visualizations()
     
-  
     # Calculate and print training score
     training_score = analysis.calculate_training_score()
     if training_score:
         print("\nTraining Score Analysis:")
-        print(f"Overall Training Score: {training_score['overall_score']}")
+        print(f"Overall Training Score: {training_score['overall_score']:.2f}")
         
         print("\nMetric Breakdown:")
         for metric, details in training_score['metric_breakdown'].items():
             print(f"{metric.replace('_', ' ').title()}:")
-            print(f"  Normalized Value: {details['normalized_value']}")
-            print(f"  Weighted Value: {details['weighted_value']}")
-            print(f"  Raw Mean: {details['raw_mean']}")
-            print(f"  Raw Std Dev: {details['raw_std']}")
+            print(f"  Normalized Value: {details['normalized_value']:.2f}")
+            print(f"  Weighted Value: {details['weighted_value']:.2f}")
+            print(f"  Raw Mean: {details['raw_mean']:.2f}")
+            print(f"  Raw Std Dev: {details['raw_std']:.2f}")
         
         print("\nPerformance Trends:")
         for trend, value in training_score['performance_trends'].items():
-            print(f"{trend.replace('_', ' ').title()}: {value}")
+            print(f"{trend.replace('_', ' ').title()}: {value:.2f}")
 
-
+def calculate_training_score(self):
+    """
+    Calculate a comprehensive training score based on multiple performance metrics
+    
+    Returns a dictionary with detailed score breakdown and overall training score
+    """
+    # Normalize and weight different metrics
+    try:
+        # Metrics to consider
+        metrics = {
+            'running_economy': {'weight': 0.25, 'higher_is_better': True},
+            'vo2max': {'weight': 0.20, 'higher_is_better': True},
+            'distance': {'weight': 0.15, 'higher_is_better': True},
+            'efficiency_score': {'weight': 0.20, 'higher_is_better': True},
+            'heart_rate': {'weight': 0.20, 'higher_is_better': False}
+        }
+        
+        # Normalization function
+        def normalize_metric(series, higher_is_better):
+            if higher_is_better:
+                return (series - series.min()) / (series.max() - series.min())
+            else:
+                return 1 - ((series - series.min()) / (series.max() - series.min()))
+        
+        # Calculate normalized scores
+        normalized_scores = {}
+        for metric, config in metrics.items():
+            normalized_scores[metric] = normalize_metric(
+                self.training_log[metric], 
+                config['higher_is_better']
+            )
+        
+        # Calculate weighted scores
+        weighted_scores = {}
+        for metric, config in metrics.items():
+            weighted_scores[metric] = normalized_scores[metric] * config['weight']
+        
+        # Overall training score
+        overall_score = sum([score.mean() for score in weighted_scores.values()]) * 100
+        
+        # Detailed analysis
+        analysis = {
+            'overall_score': overall_score,
+            'metric_breakdown': {
+                metric: {
+                    'normalized_value': normalized_scores[metric].mean(),
+                    'weighted_value': weighted_scores[metric].mean(),
+                    'raw_mean': self.training_log[metric].mean(),
+                    'raw_std': self.training_log[metric].std()
+                } for metric in metrics
+            },
+            'performance_trends': {
+                'running_economy_trend': normalized_scores['running_economy'].corr(pd.to_datetime(self.training_log['date'])),
+                'distance_progression': normalized_scores['distance'].corr(pd.to_datetime(self.training_log['date']))
+            }
+        }
+        
+        return analysis
+    
+    except Exception as e:
+        print(f"Error calculating training score: {e}")
+        return None
+    
+    
 if __name__ == "__main__":
     
     main()

@@ -1,14 +1,19 @@
+
 # this file is used to parse the fit file and store the dev_data in the database
-""" stelios (c) steliosmacrico "jHeel 2024 creating plugin - integrate fbb_HRV
-""" 
-""" purpose of this is to make a more simple plugin to manage hrvData"""
+""" stelios (c) steliosmacrico "jHeel 2024 creating plugin"""
+
+######################################
+"jHEEL main version"##################
+######################################
+
 import sqlite3
 import os
 import logging
 import datetime
-from fbb_hrv_plugin import fbb_hrv
+
 
 # Set up logging
+
 # Get the current date and time
 now = datetime.datetime.now()
 
@@ -16,143 +21,31 @@ now = datetime.datetime.now()
 timestamp = now.strftime('%Y%m%d_%H%M%S')
 
 # Include the timestamp in the log file name
-logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Plugins/Logs/jheel_parse_fbbHRV{timestamp}.log', level=logging.INFO)
+logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Logs_Prod/jheel_parse_{timestamp}.log', level=logging.INFO)
 
 # Include the timestamp in the log file name
 logging.info('Starting script...')
 print('Starting script...')
- 
-def execute_fbb_hrv_plugin(fit_file_path, activity_id):
-    try:
-        fit_file = FitFile(fit_file_path)
-        
-        # Connect to database
-        conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis_hrv.db')
-        cursor = conn.cursor()
-        
-        # Process records
-        record_num = 0
-        for msg in fit_file.messages:
-            if msg.name == 'record':
-                fields = {field.name: field.value for field in msg.fields}
-                
-                cursor.execute('''
-                    INSERT INTO hrv_records (activity_id, record, timestamp, hrv_s, hrv_btb, hrv_hr, rrhr, rawHR, RRint, hrv, rmssd, sdnn, SaO2_C)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    activity_id,
-                    record_num,
-                    fields.get('timestamp'),
-                    fields.get('dev_hrv_s'),
-                    fields.get('dev_hrv_btb'),
-                    fields.get('dev_hrv_hr'),
-                    fields.get('rrhr'),
-                    fields.get('rawHR'),
-                    fields.get('RRint'),
-                    fields.get('hrv'),
-                    fields.get('rmssd'),
-                    fields.get('sdnn'),
-                    fields.get('SaO2_C')
-                ))
-                record_num += 1
-            
-            # Process session data
-            elif msg.name == 'session':
-                fields = {field.name: field.value for field in msg.fields}
-                
-                cursor.execute('''
-                    INSERT INTO hrv_sessions (
-                        activity_id, timestamp, min_hr, hrv_rmssd, hrv_sdrr_f, 
-                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20, session_hrv, NN50, NN20, armssd, asdnn, SaO2, trnd_hrv, recovery
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    activity_id,
-                    fields.get('timestamp'),
-                    fields.get('dev_min_hr'),
-                    fields.get('dev_hrv_rmssd'),
-                    fields.get('dev_hrv_sdrr_f'),
-                    fields.get('dev_hrv_sdrr_l'),
-                    fields.get('dev_hrv_pnn50'),
-                    fields.get('dev_hrv_pnn20'),
-                    fields.get('session_hrv'),
-                    fields.get('NN50'),
-                    fields.get('NN20'),
-                    fields.get('armssd'),
-                    fields.get('asdnn'),
-                    fields.get('SaO2'),
-                    fields.get('trnd_hrv'),
-                    fields.get('recovery')
-                ))
-        
-        conn.commit()
-        conn.close()
-        
-        logging.info(f'fbb_hrv plugin executed successfully for activity {activity_id}')
-    except Exception as e:
-        logging.error(f'Error executing fbb_hrv plugin: {e}')
 
+# Set up the database connection
+# database_path = os.path.abspath('c:/users/stma/healthdata/dbs/garmin_activities.db')
+# database_path = os.path.abspath('e:/jheel_dev/DataBasesDev/artemis.db')
+ 
 def create_table_if_not_exists():
-    conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/artemis_hrv.db')
+    conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/artemis.db')
     cursor = conn.cursor()
 
     #drop table if exists
-    cursor.execute('DROP TABLE IF EXISTS ArtemistblV41')
-    logging.info('ArtemisTable41 dropped successfully.')
-    cursor.execute('DROP TABLE IF EXISTS hrv_records')
-    logging.info('hrv_records Table dropped successfully.')
-    cursor.execute('DROP TABLE IF EXISTS hrv_sessions')
-    logging.info('hrv_sessions Table dropped successfully.')
-   
-       # Create hrv_records table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS hrv_records (
-            activity_id TEXT,
-            record INTEGER,
-            timestamp TEXT,
-            hrv_s INTEGER,
-            hrv_btb INTEGER,
-            hrv_hr INTEGER,
-            rrhr INTEGER,
-            rawHR INTEGER,
-            RRint INTEGER,
-            hrv INTEGER,
-            rmssd TEXT,
-            sdnn INTEGER,
-            SaO2_C INTEGER,
-            PRIMARY KEY (activity_id, record)
-        )
-    ''')
+    cursor.execute('DROP TABLE IF EXISTS Artemistbl_Prod')
+    logging.info('Table dropped successfully.')
 
-    # Create hrv_sessions table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS hrv_sessions (
-            activity_id TEXT PRIMARY KEY,
-            timestamp TEXT,
-            min_hr INTEGER,
-            hrv_rmssd INTEGER,
-            hrv_sdrr_f INTEGER,
-            hrv_sdrr_l INTEGER,
-            hrv_pnn50 INTEGER,
-            hrv_pnn20 INTEGER,
-            session_hrv INTEGER,
-            NN50 INTEGER,
-            NN20 INTEGER,
-            armssd INTEGER,
-            asdnn INTEGER,
-            SaO2 INTEGER,
-            trnd_hrv INTEGER,
-            recovery INTEGER
-        )
-    ''')
-
-    # Create main ArtemistblV41 the Production - main table
-   
-   
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ArtemistblV41 (
+        CREATE TABLE IF NOT EXISTS Artemistbl_Prod (
             activity_id INT PRIMARY KEY,
             timestamp TEXT,
+            sport TEXT,
+            avg_heart_rate INT,
+            total_elapsed_time INT,
             distance REAL,
             hrv INT,
             fat INT,
@@ -187,42 +80,20 @@ def create_table_if_not_exists():
             HF INT,
             VLF INT,
             pNN50 INT, 
-            LFnu INT, HFnu INT,MeanHR INT, MeanRR INT
+            LFnu INT, HFnu INT,MeanHR INT, MeanRR INT, Running_Economy TXT
         )
     ''')
     
-    logging.info('Table created successfully.')
+    logging.info('Table Artemistbl_Prod created successfully.')
 
     conn.commit()
     conn.close()
-
-#create view to join activities and garmin tables
-
-#def create_view_if_not_exists():
-#    conn = sqlite3.connect(r'c:/steliosdev/jheel_dev/dev_learn/dbs/artemis_hrv.db')
-#    cursor = conn.cursor()
-
-#    logging.info('Creating view...')
-#    cursor.execute('''
-#        CREATE VIEW IF NOT EXISTS activities_view AS
-#        SELECT s.*
-#        FROM ArtemistblV41dev s
-#        JOIN activitis.avtivity_id ON s.activity_id = g.activity_id
-#    ''')
-
-#    conn.commit()
-#    conn.close()
-#    logging.info('View created successfully.')
-
-
 
 
 # Parse all .fit files in the specified folder (folder_path)
 from fitparse import FitFile
 
 def parse_all_fit_files_in_folder(folder_path):
-    
-       
     all_session_data = []
     for filename in os.listdir(folder_path):
         if filename.endswith('.fit'):
@@ -246,14 +117,9 @@ def parse_all_fit_files_in_folder(folder_path):
 # Parse a single .fit file and return the session data
 
 def parse_fit_file(file_path, activity_id):
-    
-    # First execute the HRV plugin
-    execute_fbb_hrv_plugin(file_path, activity_id)
-    
-    # Then continue with existing processing
     fit_file = FitFile(file_path)
+
     messages = fit_file.messages
-    
     session_data = []
 
     for msg in messages:
@@ -263,6 +129,9 @@ def parse_fit_file(file_path, activity_id):
                 field_dict = {field.name: field.value for field in fields}
                 
                 timestamp = field_dict.get('timestamp')
+                sport = field_dict.get('sport')
+                avg_heart_rate = field_dict.get('avg_heart_rate')
+                total_elapsed_time = field_dict.get('total_elapsed_time')
                 activity_id = activity_id
                 distance = field_dict.get('total_distance')
                 hrv = field_dict.get('HRV')
@@ -302,6 +171,7 @@ def parse_fit_file(file_path, activity_id):
                 HFnu = field_dict.get('HFnu')
                 MeanHR = field_dict.get('Mean HR')
                 MeanRR = field_dict.get('Mean RR')
+                Running_Economy = field_dict.get('Running Economy')
 
                 if steps is None:
                     steps = field_dict.get('steps')
@@ -309,6 +179,9 @@ def parse_fit_file(file_path, activity_id):
                 session_data.append({
                     'activity_id': activity_id,
                     'timestamp': timestamp, # '2021-09-01 12:00:00
+                    'sport': sport,
+                    'avg_heart_rate': avg_heart_rate,
+                    'total_elapsed_time': total_elapsed_time,
                     'distance': distance,
                     'hrv': hrv,
                     'fat': fat,
@@ -346,7 +219,8 @@ def parse_fit_file(file_path, activity_id):
                     'LFnu'  : LFnu,
                     'HFnu' : HFnu,
                     'MeanHR' : MeanHR,
-                    'MeanRR' : MeanRR
+                    'MeanRR' : MeanRR,
+                    'Running Economy' : Running_Economy
 
                 })
                 
@@ -358,13 +232,14 @@ def parse_fit_file(file_path, activity_id):
 # Insert the session data into the database
 
 def insert_data_into_db(data):
-    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis_hrv.db')
+    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis.db')
     cursor = conn.cursor()
 
     # Specify the fields you care about
     specific_fields = ['fat','Total Fat','Carbs','Total Carbs',
-                    'VO2maxSmooth',
-                    'VO2maxSession',
+                    'VO2maxSmooth','sport',
+                    'avg_heart_rate', 'total_elapsed_time',
+                    'VO2maxSession', 'timestamp',
                     'CardiacDrift',
                     'CooperTest',
                     'Steps',
@@ -389,7 +264,7 @@ def insert_data_into_db(data):
                     'SD1',
                     'LF',
                     'HF',
-                    'VLF','pNN50','LFnu','HFnu','MeanHR', 'MeanRR']  # Replace with your specific fields
+                    'VLF','pNN50','LFnu','HFnu','MeanHR', 'MeanRR', 'Running Economy']  # Replace with your specific fields
 
     for session in data:
         # Check if all specific fields in the session dictionary are None
@@ -399,46 +274,49 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO ArtemistblV41 (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?)
-        ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
-              session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
-              session['MeanRR'], session['MeanHR']))
+            INSERT OR REPLACE INTO Artemistbl_Prod (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, avg_heart_rate, total_elapsed_time, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['sport'], 
+              session['avg_heart_rate'], session['total_elapsed_time'],
+              session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
+              session ['timestamp'],session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
+              session['MeanRR'], session['MeanHR'], session['Running Economy']))
 
     conn.commit()
     conn.close()
 
 #create view to join activities and garmin tables
-
-#def create_view():
+def create_view_if_not_exists():
     # conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
-#    conn = sqlite3.connect('c:/steliosdev/jheel_dev/dev_learn/dbs/artemis_hrv.db')
-#    cursor = conn.cursor()
+    # conn = sqlite3.connect('c:/users/stma/healthdata/dbs/garmin_activities.db')
+    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis.db')
+    cursor = conn.cursor()
 
-#    cursor.execute('''
-#        CREATE VIEW IF NOT EXISTS ArtemistblV41dev View AS
-#        SELECT activities.*
-#        FROM activities
-#        INNER JOIN ArtemistblV2prod ON activities.activity_id = Artemistbl41dev.activity_id
-#    ''')
+    cursor.execute('''
+        CREATE VIEW IF NOT EXISTS RunProd_view AS
+        SELECT activities.*
+        FROM activities
+        INNER JOIN Artemistbl_mariner ON activities.activity_id = Artemistbl_mariner.activity_id
+        where Artemistbl_mariner.sport == "running" ORDER BY Artemistbl_mariner.timestamp DESC
+    ''')
     
-#    logging.info('View DEV test created successfully.')
+    logging.info('View created successfully.')
 
-#    conn.commit()
-#    conn.close()
-    
+    conn.commit()
+    conn.close()
 
 # run the script as wanted - main function - jHeel artemis data
 if __name__ == "__main__":  
+    # create view and table
     create_table_if_not_exists()
-try:
-    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activitiesTEST')
+    # create_view()
+    create_view_if_not_exists()
+    # all_session_data = parse_all_fit_files_in_folder('c:/steliosdev/jheel_dev/devinout/testfit')
+    # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activitiesTEST')
+    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
     insert_data_into_db(all_session_data)
     logging.info('All data inserted successfully.')
-    print('All data inserted successfully (c)smacrico ')
-except Exception as e:
-    logging.error(f'Error processing data: {e}')
-    print(f'Error processing data: {e}')
+    print('All data inserted successfully.')
 
 logging.info('Script completed successfully.')
 print('Script completed successfully.')

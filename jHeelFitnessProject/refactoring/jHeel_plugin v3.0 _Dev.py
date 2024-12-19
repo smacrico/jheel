@@ -21,7 +21,7 @@ now = datetime.datetime.now()
 timestamp = now.strftime('%Y%m%d_%H%M%S')
 
 # Include the timestamp in the log file name
-logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Plugins/Logs/jheel_parse_DEVtest_{timestamp}.log', level=logging.INFO)
+logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Logs_Dev/jheel_parse_DEVtest_{timestamp}.log', level=logging.INFO)
 
 # Include the timestamp in the log file name
 logging.info('Starting script...')

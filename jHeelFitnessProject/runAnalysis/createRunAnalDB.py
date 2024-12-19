@@ -1,5 +1,5 @@
-############### create RunningAnalysis database
-# 
+############### create RunningAnalysis database in Production environment
+# dev 4.0 - fixed statments for training score and training log
 # 
 # 
 # 
@@ -42,6 +42,8 @@ try:
     
 
     # Select the specific columns from Artemis database
+    # FROM Artemistbl_Prod prod
+    # FROM Artemistbl_mariner
     cursor_artemis.execute('''
         SELECT running_economy, timestamp, distance, sport, vo2maxsession,  cardiacdrift, avg_heart_rate, total_elapsed_time
         FROM Artemistbl_mariner
