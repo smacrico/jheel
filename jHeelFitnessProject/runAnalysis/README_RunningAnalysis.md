@@ -109,3 +109,12 @@ Higher VO2 max is better
 Longer distances are better
 Higher efficiency score is better
 Lower heart rate is better
+
+### More fixes
+ # In the advanced_visualizations method, modify the pie chart section:
+ This solution:
+
+Filters out rows with NaN values before calculating zones
+Only includes zones that have actual data
+Handles the case where there might not be enough valid data
+Provides helpful error messages if something goes wrong

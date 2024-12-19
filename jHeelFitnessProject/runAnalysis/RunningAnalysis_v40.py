@@ -32,12 +32,28 @@ class RunningAnalysis:
             print(f"Error loading data: {e}")
             return pd.DataFrame()
     
-    def add_session(self, date, running_economy, vo2max, distance, time, heart_rate, sport=None, cardicdrift=None):
+    def add_session(self, date, running_economy, vo2max, distance, time, heart_rate):
         """Add a new running session to the database"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            # conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/RunningAnalysis.db')
             cursor = conn.cursor()
             
+            # Create table if not exists
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS running_sessions (
+                date TEXT,
+                running_economy INT,
+                vo2max INT,
+                distance INT,
+                time INT,
+                heart_rate INT,
+                sport TEXT,
+                cardicdrift INT
+            )
+            ''')
+            
+            # Insert new session
             cursor.execute('''
             INSERT INTO running_sessions 
             (date, running_economy, vo2max, distance, time, heart_rate, sport, cardicdrift)
@@ -47,49 +63,12 @@ class RunningAnalysis:
             conn.commit()
             conn.close()
             
+            # Reload training log
             self.training_log = self.load_training_data()
-            print(self.training_log)
+            print(trainin_log)
         except Exception as e:
             print(f"Error adding session: {e}")
-        
-    def save_training_log_to_db(self):
-        """Save training log DataFrame to SQLite database"""
-        try:
-            conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/RunningAnalysis.db')
-            
-            # Create a new table for training logs if it doesn't exist
-            self.training_log.to_sql('training_logs', 
-                                    conn, 
-                                    if_exists='replace',  # 'replace' will overwrite existing table
-                                    index=False)
-            
-            conn.close()
-            print("Training log successfully saved to database")
-        except Exception as e:
-            print(f"Error saving training log to database: {e}")
-
-    def load_training_data(self):
-        try:
-            conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/RunningAnalysis.db')
-            query = """
-            SELECT 
-                date,
-                COALESCE(running_economy, 0) as running_economy,
-                COALESCE(vo2max, 0) as vo2max,
-                COALESCE(distance, 0) as distance,
-                COALESCE(time, 0) as time,
-                COALESCE(heart_rate, 0) as heart_rate,
-                COALESCE(running_economy / NULLIF(vo2max, 0), 0) AS efficiency_score,
-                COALESCE(running_economy * (distance / NULLIF(time, 0)), 0) AS energy_cost
-            FROM running_sessions
-            """
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-            return df
-        except Exception as e:
-            print(f"Error loading data: {e}")
-            return pd.DataFrame()
-        
+    
     def visualize_trends(self):
         """Create visualizations of running data"""
         try:
@@ -181,45 +160,19 @@ class RunningAnalysis:
         plt.xlabel('Pace (min/km)')
         plt.ylabel('Heart Rate (bpm)')
         
-       # In the advanced_visualizations method, modify the pie chart section:
-
         # 4. Training Zones Pie Chart
         plt.subplot(2, 3, 4)
-        try:
-            # Calculate zones only for rows with valid running_economy and vo2max
-            valid_rows = self.training_log[
-                (self.training_log['running_economy'].notna()) & 
-                (self.training_log['vo2max'].notna())
-            ]
-            
-            if not valid_rows.empty:
-                # Use the first valid row for zone calculation
-                first_valid = valid_rows.iloc[0]
-                zones = self.calculate_training_zones(first_valid['running_economy'], first_valid['vo2max'])
-                
-                zone_durations = {}
-                for zone, (lower, upper) in zones.items():
-                    count = len(valid_rows[
-                        (valid_rows['running_economy'] >= lower) & 
-                        (valid_rows['running_economy'] < upper)
-                    ])
-                    if count > 0:  # Only include zones with data
-                        zone_durations[zone] = count
-                
-                if zone_durations:  # Check if we have any data to plot
-                    plt.pie(
-                        list(zone_durations.values()), 
-                        labels=list(zone_durations.keys()), 
-                        autopct='%1.1f%%'
-                    )
-                    plt.title('Training Zones Distribution')
-                else:
-                    plt.text(0.5, 0.5, 'No valid zone data', ha='center', va='center')
-            else:
-                plt.text(0.5, 0.5, 'No valid training data', ha='center', va='center')
-        except Exception as e:
-            print(f"Error creating pie chart: {e}")
-            plt.text(0.5, 0.5, 'Error creating pie chart', ha='center', va='center')
+        zones = self.training_log.apply(
+            lambda row: self.calculate_training_zones(row['running_economy'], row['vo2max']), 
+            axis=1
+        )
+        zone_durations = {zone: len(self.training_log[
+            (self.training_log['running_economy'] >= lower) & 
+            (self.training_log['running_economy'] < upper)
+        ]) for zone, (lower, upper) in zones.iloc[0].items()}
+        
+        plt.pie(zone_durations.values(), labels=zone_durations.keys(), autopct='%1.1f%%')
+        plt.title('Training Zones Distribution')
         
         # 5. Performance Progression Radar Chart
         plt.subplot(2, 3, 5, polar=True)
@@ -352,10 +305,6 @@ def main():
             time=27,
             heart_rate=150
         )
-    
-    
-    # Save training log to database
-    analysis.save_training_log_to_db()
     
     # Print training log
     print("Training Log:")
