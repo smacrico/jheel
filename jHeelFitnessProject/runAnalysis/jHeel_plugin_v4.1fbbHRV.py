@@ -16,7 +16,7 @@ now = datetime.datetime.now()
 timestamp = now.strftime('%Y%m%d_%H%M%S')
 
 # Include the timestamp in the log file name
-logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Logs_Prod/DEV_jheel_parse_fbbHRV{timestamp}.log', level=logging.INFO)
+logging.basicConfig(filename=f'e:/jHeel_Dev/gProjects/Artemis/Logs_Dev/Prod_jheel_parse_fbbHRV{timestamp}.log', level=logging.INFO)
 
 # Include the timestamp in the log file name
 logging.info('Starting script...')
@@ -100,8 +100,8 @@ def create_table_if_not_exists():
     cursor = conn.cursor()
 
     #drop table if exists
-    cursor.execute('DROP TABLE IF EXISTS ArtemistblV41prod')
-    logging.info('ArtemisTable41prod dropped successfully.')
+    cursor.execute('DROP TABLE IF EXISTS ArtemistblV41')
+    logging.info('ArtemisTable41dev dropped successfully.')
     cursor.execute('DROP TABLE IF EXISTS hrv_records')
     logging.info('hrv_records Table dropped successfully.')
     cursor.execute('DROP TABLE IF EXISTS hrv_sessions')
@@ -156,7 +156,7 @@ def create_table_if_not_exists():
    
    
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ArtemistblV41prod (
+        CREATE TABLE IF NOT EXISTS ArtemistblV41 (
             activity_id INT PRIMARY KEY,
             timestamp TEXT,
             sport TEXT,
@@ -387,7 +387,7 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO ArtemistblV41prod (activity_id, timestamp, distance, sport, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
+            INSERT OR REPLACE INTO ArtemistblV41 (activity_id, timestamp, distance, sport, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?)
         ''', (session['activity_id'], session['timestamp'],session['distance'], session['sport'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
               session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
@@ -401,7 +401,6 @@ def insert_data_into_db(data):
 if __name__ == "__main__":  
     create_table_if_not_exists()
 try:
-    # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activitiesTEST')
     all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
     insert_data_into_db(all_session_data)
     logging.info('All data inserted successfully.')

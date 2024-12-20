@@ -13,7 +13,7 @@ class HRVAnalysis:
     def _load_data_from_database(self):
         """Load HRV data from SQLite database"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/artemis_hrv.db')
             query = """
             SELECT 
                 date, hrv, pnn50, pnn20, rmssd, sdnn, 
@@ -37,7 +37,7 @@ class HRVAnalysis:
                    hrv_diff_from_avg, oxygen_saturation, average_hrv, recovery_score):
         """Add a new HRV session to the database"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(r'e:/jheel_dev/DataBasesDev/artemis_hrv.db')
             cursor = conn.cursor()
             
             # Create table if it doesn't exist
@@ -129,7 +129,7 @@ class HRVAnalysis:
         
         return round(recovery_score, 2)    
 
-# Example usage
+# Example usage and main call fuction ####
 def main():
     # Initialize analysis with database
     analysis = HRVAnalysis('e:/jheel_dev/DataBasesDev/artemis_hrv.db')
