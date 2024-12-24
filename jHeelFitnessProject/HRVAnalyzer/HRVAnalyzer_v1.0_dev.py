@@ -1,16 +1,14 @@
 """
-HRV Data Processor and Analyzer
+HRV Data Processor and Analyzer v1.0 (Development Version)
 Processes heart rate variance data from FIT files using fbbbrown's Heart Monitor + HRV app format.
 """
 
 import logging
 import os
+import sqlite3
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine, text, Column, Integer, DateTime, String, ForeignKey, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from fitparse import FitFile
 
 # Setup logging
@@ -20,248 +18,261 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create SQLAlchemy base
-Base = declarative_base()
-
-class HRVRecords(Base):
-    """Table for storing detailed HRV records"""
-    __tablename__ = 'hrv_records'
-    
-    activity_id = Column(String, primary_key=True)
-    record = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
-    hrv_s = Column(Integer)      # ms
-    hrv_btb = Column(Integer)    # ms
-    hrv_hr = Column(Integer)     # bpm
-
-class HRVSessions(Base):
-    """Table for storing HRV session summaries"""
-    __tablename__ = 'hrv_sessions'
-    
-    activity_id = Column(String, primary_key=True)
-    timestamp = Column(DateTime)
-    min_hr = Column(Integer)     # bpm
-    hrv_rmssd = Column(Integer)  # bpm
-    hrv_sdrr_f = Column(Integer) # bpm
-    hrv_sdrr_l = Column(Integer) # bpm
-    hrv_pnn50 = Column(Integer)  # percentage
-    hrv_pnn20 = Column(Integer)  # percentage
-
 class HRVProcessor:
     """Main class for processing and analyzing HRV data"""
     
     _application_id = bytearray(b'\x0b\xdc\x0eu\x9b\xaaAz\x8c\x9f\xe9vf*].')
 
-    def __init__(self, db_path='sqlite:///astremis_hrv.db'):
-        self.engine = create_engine(db_path)
-        self.Session = sessionmaker(bind=self.engine)
-        Base.metadata.create_all(self.engine)
-        self._create_views()
+    def __init__(self, db_path='e:/jheel_dev/DataBasesDev/artemis_hrv.db'):
+        self.db_path = db_path
+        self._init_database()
 
-    def _create_views(self):
-        """Create database views for analysis"""
-        views = {
-            'daily_hrv_summary': """
-                CREATE VIEW IF NOT EXISTS daily_hrv_summary AS
-                SELECT 
-                    DATE(timestamp) as date,
-                    AVG(hrv_rmssd) as avg_rmssd,
-                    AVG(hrv_sdrr_f) as avg_sdrr_f,
-                    AVG(hrv_sdrr_l) as avg_sdrr_l,
-                    AVG(hrv_pnn50) as avg_pnn50,
-                    AVG(hrv_pnn20) as avg_pnn20,
-                    MIN(min_hr) as lowest_hr
-                FROM hrv_sessions
-                GROUP BY DATE(timestamp)
-            """,
-            'detailed_hrv_analysis': """
-                CREATE VIEW IF NOT EXISTS detailed_hrv_analysis AS
-                SELECT 
-                    r.activity_id,
-                    r.timestamp,
-                    r.hrv_btb,
-                    r.hrv_hr,
-                    s.hrv_rmssd,
-                    s.hrv_sdrr_f,
-                    s.hrv_sdrr_l
-                FROM hrv_records r
-                JOIN hrv_sessions s ON r.activity_id = s.activity_id
-            """
-        }
-        
-        with self.engine.connect() as conn:
-            for view_name, view_sql in views.items():
-                conn.execute(text(view_sql))
-                conn.commit()
+    def _init_database(self):
+        """Initialize database tables and views"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
 
-    def write_record_entry(self, db_session, fit_file, activity_id, message_fields, record_num):
-        """Write a record message into the records table"""
+        # Create HRV Records table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hrv_recordsDEV1 (
+                activity_id TEXT,
+                record INTEGER,
+                timestamp DATETIME,
+                hrv_s INTEGER,
+                hrv_btb INTEGER,
+                hrv_hr INTEGER,
+                PRIMARY KEY (activity_id, record)
+            )
+        """)
+
+        # Create HRV Sessions table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hrv_sessionsDEV1 (
+                activity_id TEXT PRIMARY KEY,
+                timestamp DATETIME,
+                min_hr INTEGER,
+                hrv_rmssd INTEGER,
+                hrv_sdrr_f INTEGER,
+                hrv_sdrr_l INTEGER,
+                hrv_pnn50 INTEGER,
+                hrv_pnn20 INTEGER
+            )
+        """)
+
+        # Create views
+        cursor.execute("""
+            CREATE VIEW IF NOT EXISTS daily_hrv_summary AS
+            SELECT 
+                DATE(timestamp) as date,
+                AVG(hrv_rmssd) as avg_rmssd,
+                AVG(hrv_sdrr_f) as avg_sdrr_f,
+                AVG(hrv_sdrr_l) as avg_sdrr_l,
+                AVG(hrv_pnn50) as avg_pnn50,
+                AVG(hrv_pnn20) as avg_pnn20,
+                MIN(min_hr) as lowest_hr
+            FROM hrv_sessionsDEV1
+            GROUP BY DATE(timestamp)
+        """)
+
+        cursor.execute("""
+            CREATE VIEW IF NOT EXISTS detailed_hrv_analysis AS
+            SELECT 
+                r.activity_id,
+                r.timestamp,
+                r.hrv_btb,
+                r.hrv_hr,
+                s.hrv_rmssd,
+                s.hrv_sdrr_f,
+                s.hrv_sdrr_l
+            FROM hrv_recordsDEV1 r
+            JOIN hrv_sessions s ON r.activity_id = s.activity_id
+        """)
+
+        conn.commit()
+        conn.close()
+
+    def write_record_entry(self, conn, fit_file, activity_id, message_fields, record_num):
+        """Write a record message into the records DEV1 table"""
         try:
-            record = {
-                'activity_id': activity_id,
-                'record': record_num,
-                'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'hrv_s': message_fields.get('dev_hrv_s'),
-                'hrv_btb': message_fields.get('dev_hrv_btb'),
-                'hrv_hr': message_fields.get('dev_hrv_hr'),
-            }
+            cursor = conn.cursor()
             
-            existing = db_session.query(HRVRecords).filter_by(
-                activity_id=activity_id, 
-                record=record_num
-            ).first()
+            # Check if record exists
+            cursor.execute("""
+                SELECT 1 FROM hrv_recordsDEV1 
+                WHERE activity_id = ? AND record = ?
+            """, (activity_id, record_num))
             
-            if not existing:
-                logger.debug(f"Writing HRV record {record} for {fit_file.filename}")
-                db_session.add(HRVRecords(**record))
+            if not cursor.fetchone():
+                record = (
+                    activity_id,
+                    record_num,
+                    fit_file.utc_datetime_to_local(message_fields.timestamp),
+                    message_fields.get('dev_hrv_s'),
+                    message_fields.get('dev_hrv_btb'),
+                    message_fields.get('dev_hrv_hr')
+                )
                 
-            return record
+                cursor.execute("""
+                    INSERT INTO hrv_recordsDEV1 
+                    (activity_id, record, timestamp, hrv_s, hrv_btb, hrv_hr)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, record)
+                
+                logger.debug(f"Writing HRV record for {activity_id}, record {record_num}")
+            
+            return True
             
         except Exception as e:
             logger.error(f"Error writing record entry: {e}")
-            return None
+            return False
 
-    def write_session_entry(self, db_session, fit_file, activity_id, message_fields):
+    def write_session_entry(self, conn, fit_file, activity_id, message_fields):
         """Write a session message into the sessions table"""
         try:
-            session = {
-                'activity_id': activity_id,
-                'timestamp': fit_file.utc_datetime_to_local(message_fields.timestamp),
-                'min_hr': message_fields.get('dev_min_hr'),
-                'hrv_rmssd': message_fields.get('dev_hrv_rmssd'),
-                'hrv_sdrr_f': message_fields.get('dev_hrv_sdrr_f'),
-                'hrv_sdrr_l': message_fields.get('dev_hrv_sdrr_l'),
-                'hrv_pnn50': message_fields.get('dev_hrv_pnn50'),
-                'hrv_pnn20': message_fields.get('dev_hrv_pnn20'),
-            }
+            cursor = conn.cursor()
             
-            existing = db_session.query(HRVSessions).filter_by(
-                activity_id=activity_id
-            ).first()
+            # Check if session exists
+            cursor.execute("""
+                SELECT 1 FROM hrv_sessionsDEV1 
+                WHERE activity_id = ?
+            """, (activity_id,))
             
-            if not existing:
-                logger.debug(f"Writing HRV session {session} for {fit_file.filename}")
-                db_session.add(HRVSessions(**session))
+            if not cursor.fetchone():
+                session = (
+                    activity_id,
+                    fit_file.utc_datetime_to_local(message_fields.timestamp),
+                    message_fields.get('dev_min_hr'),
+                    message_fields.get('dev_hrv_rmssd'),
+                    message_fields.get('dev_hrv_sdrr_f'),
+                    message_fields.get('dev_hrv_sdrr_l'),
+                    message_fields.get('dev_hrv_pnn50'),
+                    message_fields.get('dev_hrv_pnn20')
+                )
                 
-            return session
+                cursor.execute("""
+                    INSERT INTO hrv_sessionsDEV1 
+                    (activity_id, timestamp, min_hr, hrv_rmssd, hrv_sdrr_f, 
+                     hrv_sdrr_l, hrv_pnn50, hrv_pnn20)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, session)
+                
+                logger.debug(f"Writing HRV session for {activity_id}")
+            
+            return True
             
         except Exception as e:
             logger.error(f"Error writing session entry: {e}")
-            return None
+            return False
 
     def process_fit_file(self, fit_file_path):
         """Process a single FIT file"""
         try:
             fit_file = FitFile(fit_file_path)
             
-            # Check if this is an HRV activity
-            messages = fit_file.messages
-            app_id = None
+            # Check if this is an HRV activity by looking for field 110
+            messages = list(fit_file.messages)
+            is_hrv_activity = False
             for message in messages:
                 if message.name == 'file_id':
-                    app_id = message.fields.get('application_id')
+                    fields_dict = {field.name: field.value for field in message.fields}
+                    app_name = fields_dict.get('field 110')  # or field number 110
+                    if app_name == "F3b Monitor+HRV":
+                        is_hrv_activity = True
                     break
                     
-            if app_id != self._application_id:
+            if not is_hrv_activity:
                 logger.info(f"Skipping {fit_file_path} - not an HRV activity")
                 return False
 
-            session = self.Session()
+            conn = sqlite3.connect(self.db_path)
             try:
                 record_num = 0
                 activity_id = os.path.basename(fit_file_path)
                 
                 for message in messages:
                     if message.name == 'record':
-                        self.write_record_entry(session, fit_file, activity_id, message.fields, record_num)
+                        fields_dict = {field.name: field.value for field in message.fields}
+                        self.write_record_entry(conn, fit_file, activity_id, fields_dict, record_num)
                         record_num += 1
                     elif message.name == 'session':
-                        self.write_session_entry(session, fit_file, activity_id, message.fields)
+                        fields_dict = {field.name: field.value for field in message.fields}
+                        self.write_session_entry(conn, fit_file, activity_id, fields_dict)
                 
-                session.commit()
+                conn.commit()
                 logger.info(f"Successfully processed {fit_file_path}")
                 return True
                 
             except Exception as e:
                 logger.error(f"Error processing file {fit_file_path}: {e}")
-                session.rollback()
                 return False
                 
             finally:
-                session.close()
+                conn.close()
 
         except Exception as e:
             logger.error(f"Error opening file {fit_file_path}: {e}")
             return False
 
-    def get_daily_summary(self, start_date=None, end_date=None):
-        """Get daily HRV summary within date range"""
-        query = """
-        SELECT * FROM daily_hrv_summary 
-        WHERE date BETWEEN :start_date AND :end_date
-        ORDER BY date
-        """
-        
-        with self.engine.connect() as conn:
-            result = conn.execute(
-                text(query),
-                {"start_date": start_date, "end_date": end_date}
-            )
-            return pd.DataFrame(result.fetchall())
-
     def analyze_hrv_trends(self, days=30):
         """Analyze HRV trends over specified number of days"""
+        conn = sqlite3.connect(self.db_path)
         query = """
-        SELECT 
-            date,
-            avg_rmssd,
-            avg_sdrr_f,
-            avg_sdrr_l,
-            avg_pnn50
-        FROM daily_hrv_summary
-        ORDER BY date DESC
-        LIMIT :days
+            SELECT 
+                date,
+                avg_rmssd,
+                avg_sdrr_f,
+                avg_sdrr_l,
+                avg_pnn50
+            FROM daily_hrv_summary
+            ORDER BY date DESC
+            LIMIT ?
         """
         
-        with self.engine.connect() as conn:
-            df = pd.read_sql(text(query), conn, params={"days": days})
+        df = pd.read_sql_query(query, conn, params=(days,))
+        conn.close()
+        
+        if df.empty:
+            return None
             
-            stats = {
-                'rmssd_mean': df['avg_rmssd'].mean(),
-                'rmssd_std': df['avg_rmssd'].std(),
-                'sdrr_f_mean': df['avg_sdrr_f'].mean(),
-                'sdrr_l_mean': df['avg_sdrr_l'].mean(),
-                'pnn50_mean': df['avg_pnn50'].mean()
-            }
-            
-            # Calculate trends
-            stats['rmssd_trend'] = np.polyfit(range(len(df)), df['avg_rmssd'], 1)[0]
-            
-            return stats
+        stats = {
+            'rmssd_mean': df['avg_rmssd'].mean(),
+            'rmssd_std': df['avg_rmssd'].std(),
+            'sdrr_f_mean': df['avg_sdrr_f'].mean(),
+            'sdrr_l_mean': df['avg_sdrr_l'].mean(),
+            'pnn50_mean': df['avg_pnn50'].mean()
+        }
+        
+        # Calculate trends
+        stats['rmssd_trend'] = np.polyfit(range(len(df)), df['avg_rmssd'], 1)[0]
+        
+        return stats
 
     def calculate_recovery_score(self, activity_id):
         """Calculate recovery score based on HRV metrics"""
-        query = """
-        SELECT 
-            hrv_rmssd,
-            hrv_sdrr_l,
-            hrv_pnn50,
-            min_hr
-        FROM hrv_sessions
-        WHERE activity_id = :activity_id
-        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        with self.engine.connect() as conn:
-            result = conn.execute(text(query), {"activity_id": activity_id}).fetchone()
+        cursor.execute("""
+            SELECT 
+                hrv_rmssd,
+                hrv_sdrr_l,
+                hrv_pnn50,
+                min_hr
+            FROM hrv_sessionsDEV1
+            WHERE activity_id = ?
+        """, (activity_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            rmssd_score = min(100, result[0] / 2)
+            sdrr_score = min(100, result[1] / 2)
+            pnn50_score = result[2]
             
-            if result:
-                rmssd_score = min(100, result.hrv_rmssd / 2)
-                sdrr_score = min(100, result.hrv_sdrr_l / 2)
-                pnn50_score = result.hrv_pnn50
-                
-                recovery_score = (rmssd_score + sdrr_score + pnn50_score) / 3
-                return round(recovery_score, 2)
-            return None
+            recovery_score = (rmssd_score + sdrr_score + pnn50_score) / 3
+            return round(recovery_score, 2)
+        return None
 
 def process_activities_folder(folder_path):
     """Process all FIT files in the specified folder"""
@@ -281,15 +292,18 @@ def process_activities_folder(folder_path):
 
 def main():
     # Process activities from the test folder
-    activities_folder = "activitiesTest"
-    processor = process_activities_folder(activities_folder)
+    # activities_folder = "activitiesTest"
+    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activitiesTEST')
     
     if processor:
         # Example analysis
         print("\nAnalyzing HRV trends for the last 30 days:")
         trends = processor.analyze_hrv_trends()
-        for metric, value in trends.items():
-            print(f"{metric}: {value:.2f}")
+        if trends:
+            for metric, value in trends.items():
+                print(f"{metric}: {value:.2f}")
+        else:
+            print("No HRV data available for analysis")
 
 if __name__ == "__main__":
     main()
