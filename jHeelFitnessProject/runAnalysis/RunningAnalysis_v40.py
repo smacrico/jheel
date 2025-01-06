@@ -354,7 +354,7 @@ def main():
         )
     
     
-    # Save training log to database
+    # Save training log to database.
     analysis.save_training_log_to_db()
     
     # Print training log
