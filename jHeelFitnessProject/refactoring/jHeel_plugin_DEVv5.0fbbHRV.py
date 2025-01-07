@@ -145,7 +145,116 @@ def parse_all_fit_files_in_folder(folder_path):
             
     return all_session_data
 
+# Parse a single .fit file and return the session data
 
+def parse_fit_file(file_path, activity_id):
+    
+    # First execute the HRV plugin
+    execute_fbb_hrv_plugin(file_path, activity_id)
+    
+    # Then continue with existing processing
+    fit_file = FitFile(file_path)
+    messages = fit_file.messages
+    
+    session_data = []
+
+    for msg in messages:
+
+            if msg.name == 'session':
+                fields = msg.fields
+                field_dict = {field.name: field.value for field in fields}
+                
+                timestamp = field_dict.get('timestamp')
+                activity_id = activity_id
+                distance = field_dict.get('total_distance')
+                hrv = field_dict.get('HRV')
+                fat = field_dict.get('Fat')  
+                total_fat = field_dict.get('Total Fat')
+                carbs = field_dict.get('Carbs')
+                total_carbs = field_dict.get('Total Carbs')
+                VO2maxSmooth = field_dict.get('VO2maxSmooth')
+                VO2maxSession = field_dict.get('VO2maxSession')
+                CardiaDrift = field_dict.get('CardiacDrift')
+                CooperTest = field_dict.get('CooperTest')
+                steps = field_dict.get('Steps')
+                field110 = field_dict.get('field110')
+                stress_hrpa = field_dict.get('stress_hrpa')
+                HR_RS_Deviation_Index = field_dict.get('HR-RS Deviation Index')
+                hrv_sdrr_f = field_dict.get('hrv_sdrr_f')
+                hrv_pnn50 = field_dict.get('hrv_pnn50')
+                hrv_pnn20 = field_dict.get('hrv_pnn20')
+                rmssd = field_dict.get('RMSSD')
+                lnrmssd = field_dict.get('lnRMSSD')
+                sdnn = field_dict.get('SDNN')
+                sdsd = field_dict.get('SDSD')
+                nn50 = field_dict.get('NN50')
+                nn20 = field_dict.get('NN20')
+                pnn20 = field_dict.get('pNN20')
+                Long = field_dict.get('Long')
+                Short = field_dict.get('Short')
+                Ectopic_S = field_dict.get('Ectopic-S')
+                hrv_rmssd = field_dict.get('hrv_rmssd')
+                SD2 = field_dict.get('SD2')
+                SD1 = field_dict.get('SD1')
+                LF = field_dict.get('LF')
+                HF = field_dict.get('HF')
+                VLF = field_dict.get('VLF')
+                pNN50 = field_dict.get('pNN50')
+                LFnu = field_dict.get('LFnu')
+                HFnu = field_dict.get('HFnu')
+                MeanHR = field_dict.get('Mean HR')
+                MeanRR = field_dict.get('Mean RR')
+
+                if steps is None:
+                    steps = field_dict.get('steps')
+                
+                session_data.append({
+                    'activity_id': activity_id,
+                    'timestamp': timestamp, # '2021-09-01 12:00:00
+                    'distance': distance,
+                    'hrv': hrv,
+                    'fat': fat,
+                    'Total Fat': total_fat, # 'extra field for total fat
+                    'Carbs' : carbs, 
+                    'Total Carbs' : total_carbs, # 'extra field for total carbs
+                    'VO2maxSmooth' : VO2maxSmooth,
+                    'VO2maxSession' : VO2maxSession,
+                    'CardiacDrift' : CardiaDrift,
+                    'CooperTest' : CooperTest,
+                    'Steps' : steps,
+                    'field110' : field110,
+                    'stress_hrpa' : stress_hrpa,
+                    'HR-RS_Deviation Index' : HR_RS_Deviation_Index,
+                    'hrv_sdrr_f' : hrv_sdrr_f,
+                    'hrv_pnn50' : hrv_pnn50,
+                    'hrv_pnn20' : hrv_pnn20,
+                    'RMSSD' : rmssd,
+                    'lnRMSSD' : lnrmssd,
+                    'SDNN' : sdnn,
+                    'SDSD' : sdsd,
+                    'NN50' : nn50,
+                    'NN20' : nn20,
+                    'pnn20' : pnn20,
+                    'Long' : Long,
+                    'Short' : Short,
+                    'Ectopic_S' : Ectopic_S,
+                    'hrv_rmssd' : hrv_rmssd,
+                    'SD2' : SD2,
+                    'SD1' : SD1,
+                    'HF' : HF,
+                    'LF' : LF,
+                    'VLF' : VLF,
+                    'pNN50' : pNN50,
+                    'LFnu'  : LFnu,
+                    'HFnu' : HFnu,
+                    'MeanHR' : MeanHR,
+                    'MeanRR' : MeanRR
+
+                })
+                
+                logging.info(f'Parsed session data for activity ID {activity_id}.')
+
+    return session_data
 
 def insert_session_data_into_postgres(data):
     conn = get_db_connection()
