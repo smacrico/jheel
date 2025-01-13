@@ -1,0 +1,133 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+
+class RunningAnalysis:
+    def __init__(self):
+        self.training_log = pd.DataFrame(columns=[
+            'date', 'running_economy', 'vo2max', 'distance', 
+            'time', 'heart_rate', 'efficiency_score', 'energy_cost'
+        ])
+    
+    def add_session(self, date, running_economy, vo2max, distance, time, heart_rate):
+        efficiency_score = self.calculate_efficiency(running_economy, vo2max)
+        energy_cost = self.calculate_energy_cost(running_economy, distance, time)
+        
+        new_session = pd.DataFrame({
+            'date': [date],
+            'running_economy': [running_economy],
+            'vo2max': [vo2max],
+            'distance': [distance],
+            'time': [time],
+            'heart_rate': [heart_rate],
+            'efficiency_score': [efficiency_score],
+            'energy_cost': [energy_cost]
+        })
+        
+        self.training_log = pd.concat([self.training_log, new_session], ignore_index=True)
+    
+    def calculate_efficiency(self, running_economy, vo2max):
+        return running_economy / vo2max
+    
+    def calculate_energy_cost(self, running_economy, distance, time):
+        return running_economy * (distance / time)
+    
+    def visualize_trends(self):
+        try:
+            plt.figure(figsize=(15, 10))
+            
+            # Convert date to datetime if not already
+            self.training_log['date'] = pd.to_datetime(self.training_log['date'])
+            
+            # Plot 1: Running Economy over time
+            plt.subplot(2, 2, 1)
+            plt.plot(self.training_log['date'], self.training_log['running_economy'], 'b-o')
+            plt.title('Running Economy Trend')
+            plt.xticks(rotation=45)
+            plt.ylabel('Running Economy')
+            
+            # Plot 2: Efficiency Score over time
+            plt.subplot(2, 2, 2)
+            plt.plot(self.training_log['date'], self.training_log['efficiency_score'], 'g-o')
+            plt.title('Efficiency Score Trend')
+            plt.xticks(rotation=45)
+            plt.ylabel('Efficiency Score')
+            
+            # Plot 3: Energy Cost vs Distance
+            plt.subplot(2, 2, 3)
+            plt.scatter(self.training_log['distance'], self.training_log['energy_cost'])
+            plt.title('Energy Cost vs Distance')
+            plt.xlabel('Distance (km)')
+            plt.ylabel('Energy Cost')
+            
+            # Plot 4: Heart Rate vs Running Economy
+            plt.subplot(2, 2, 4)
+            plt.scatter(self.training_log['heart_rate'], self.training_log['running_economy'])
+            plt.title('Heart Rate vs Running Economy')
+            plt.xlabel('Heart Rate (bpm)')
+            plt.ylabel('Running Economy')
+            
+            plt.tight_layout()
+            plt.show()
+        except Exception as e:
+            print(f"Error creating visualization: {e}")
+    
+    def calculate_training_zones(self, running_economy, vo2max):
+        zones = {
+            'Recovery': (0.6 * running_economy, 0.7 * running_economy),
+            'Endurance': (0.7 * running_economy, 0.8 * running_economy),
+            'Tempo': (0.8 * running_economy, 0.9 * running_economy),
+            'Threshold': (0.9 * running_economy, running_economy),
+            'VO2Max': (running_economy, 1.1 * running_economy)
+        }
+        return zones
+    
+    def print_training_zones(self, running_economy, vo2max):
+        training_zones = self.calculate_training_zones(running_economy, vo2max)
+        print("\nTraining Zones based on Running Economy:")
+        for zone, (lower, upper) in training_zones.items():
+            print(f"{zone}: {lower:.1f} - {upper:.1f}")
+
+def main():
+    # Create analysis object
+    analysis = RunningAnalysis()
+
+    # Current session data
+    current_date = datetime.now()
+    
+    # Add multiple sessions with varied data
+    sessions = [
+        {
+            'date': current_date - timedelta(days=i*7),
+            'running_economy': 73 - i,
+            'vo2max': 19.0 + (i*0.2),
+            'distance': 5 + i,
+            'time': 27 - i,
+            'heart_rate': 150 - i
+        } for i in range(6)
+    ]
+
+    # Add sessions to the analysis
+    for session in sessions:
+        analysis.add_session(
+            date=session['date'],
+            running_economy=session['running_economy'],
+            vo2max=session['vo2max'],
+            distance=session['distance'],
+            time=session['time'],
+            heart_rate=session['heart_rate']
+        )
+
+    # Print training log
+    print("Training Log:")
+    print(analysis.training_log)
+
+    # Visualize trends
+    analysis.visualize_trends()
+
+    # Print training zones
+    analysis.print_training_zones(73, 19.0)
+
+if __name__ == "__main__":
+    main()c
