@@ -56,8 +56,7 @@ def create_table_if_not_exists():
             VO2maxSession INT,
             CardiacDrift INT,    
             CooperTest INT,
-            steps INT,     
-            field110 TXT,
+            steps INT,
             stress_hrpa INT,
             HR_RS_Deviation_Index INT,
             hrv_sdrr_f INT,
@@ -144,7 +143,6 @@ def parse_fit_file(file_path, activity_id):
                 CardiaDrift = field_dict.get('CardiacDrift')
                 CooperTest = field_dict.get('CooperTest')
                 steps = field_dict.get('Steps')
-                field110 = field_dict.get('field110')
                 stress_hrpa = field_dict.get('stress_hrpa')
                 HR_RS_Deviation_Index = field_dict.get('HR-RS Deviation Index')
                 hrv_sdrr_f = field_dict.get('hrv_sdrr_f')
@@ -193,7 +191,6 @@ def parse_fit_file(file_path, activity_id):
                     'CardiacDrift' : CardiaDrift,
                     'CooperTest' : CooperTest,
                     'Steps' : steps,
-                    'field110' : field110,
                     'stress_hrpa' : stress_hrpa,
                     'HR-RS_Deviation Index' : HR_RS_Deviation_Index,
                     'hrv_sdrr_f' : hrv_sdrr_f,
@@ -243,7 +240,6 @@ def insert_data_into_db(data):
                     'CardiacDrift',
                     'CooperTest',
                     'Steps',
-                    'field110',
                     'stress_hrpa',
                     'HR-RS_Deviation Index',
                     'hrv_sdrr_f',
@@ -274,11 +270,11 @@ def insert_data_into_db(data):
 
         # The activity_id does not exist in the table, so insert the new record
         cursor.execute('''
-            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, avg_heart_rate, total_elapsed_time, steps, field110, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
-            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT OR REPLACE INTO Artemistbl_mariner (activity_id, distance, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, sport, avg_heart_rate, total_elapsed_time, steps, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, timestamp, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR, Running_Economy)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?)
         ''', (session['activity_id'], session['distance'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['sport'], 
               session['avg_heart_rate'], session['total_elapsed_time'],
-              session['Steps'], session['field110'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
+              session['Steps'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
               session ['timestamp'],session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
               session['MeanRR'], session['MeanHR'], session['Running Economy']))
 

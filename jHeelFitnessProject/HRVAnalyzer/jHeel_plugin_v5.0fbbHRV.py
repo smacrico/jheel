@@ -37,7 +37,7 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                 fields = {field.name: field.value for field in msg.fields}
                 
                 cursor.execute('''
-                    INSERT INTO hrv_records (activity_id, record, timestamp, hrv_s, hrv_btb, hrv_hr, rrhr, rawHR, RRint, hrv, rmssd, sdnn, SaO2_C)
+                    INSERT INTO hrv_recordsFBB (activity_id, record, timestamp, hrv_s, hrv_btb, hrv_hr, rrhr, rawHR, RRint, hrv, rmssd, sdnn, SaO2_C)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     activity_id,
@@ -61,11 +61,11 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                 fields = {field.name: field.value for field in msg.fields}
                 
                 cursor.execute('''
-                    INSERT INTO hrv_sessions (
+                    INSERT INTO hrv_sessionsFBB (
                         activity_id, timestamp, sport, min_hr, hrv_rmssd, hrv_sdrr_f, 
-                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20, session_hrv, NN50, NN20, armssd, asdnn, SaO2, trnd_hrv, recovery, sdnn, sdsd
+                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20,  armssd, asdnn, SaO2, trnd_hrv, recovery, sdnn, sdsd, dBeats, sBeats, session_hrv, NN50, NN20, sd1, sd2, lf, hf, vlf, pNN50, lfnu, hfnu, meanhr, meanrr
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ''', (
                     activity_id,
                     fields.get('timestamp'),
@@ -76,16 +76,28 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                     fields.get('hrv_sdrr_l'),
                     fields.get('hrv_pnn50'),
                     fields.get('hrv_pnn20'),
-                    fields.get('session_hrv'),
-                    fields.get('NN50'),
-                    fields.get('NN20'),
                     fields.get('armssd'),
                     fields.get('asdnn'),
                     fields.get('SaO2'),
                     fields.get('trnd_hrv'),
                     fields.get('recovery'),
                     fields.get('SDNN'),
-                    fields.get('SDSD')
+                    fields.get('SDSD'),
+                    fields.get('dBeats'),
+                    fields.get('sBeats'),
+                    fields.get('session_hrv'),
+                    fields.get('NN50'),
+                    fields.get('NN20'),
+                    fields.get('SD1'),
+                    fields.get('SD2'),
+                    fields.get('LF'),
+                    fields.get('HF'),
+                    fields.get('VLF'),
+                    fields.get('pNN50'),
+                    fields.get('LFnu'),
+                    fields.get('HFnu'),
+                    fields.get('Mean HR'),
+                    fields.get('Mean RR')
                 ))
         
         conn.commit()
@@ -102,14 +114,14 @@ def create_table_if_not_exists():
     #drop table if exists
     cursor.execute('DROP TABLE IF EXISTS ArtemistblV41')
     logging.info('ArtemisTable41dev dropped successfully.')
-    cursor.execute('DROP TABLE IF EXISTS hrv_records')
+    cursor.execute('DROP TABLE IF EXISTS hrv_recordsFBB')
     logging.info('hrv_records Table dropped successfully.')
-    cursor.execute('DROP TABLE IF EXISTS hrv_sessions')
+    cursor.execute('DROP TABLE IF EXISTS hrv_sessionsFBB')
     logging.info('hrv_sessions Table dropped successfully.')
    
        # Create hrv_records table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS hrv_records (
+        CREATE TABLE IF NOT EXISTS hrv_recordsFBB (
             activity_id TEXT,
             record INTEGER,
             timestamp TEXT,
@@ -129,7 +141,7 @@ def create_table_if_not_exists():
 
     # Create hrv_sessions table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS hrv_sessions (
+        CREATE TABLE IF NOT EXISTS hrv_sessionsFBB (
             activity_id TEXT PRIMARY KEY,
             timestamp TEXT,
             sport TEXT,
@@ -139,16 +151,28 @@ def create_table_if_not_exists():
             hrv_sdrr_l INTEGER,
             hrv_pnn50 INTEGER,
             hrv_pnn20 INTEGER,
-            session_hrv INTEGER,
-            NN50 INTEGER,
-            NN20 INTEGER,
             armssd INTEGER,
             asdnn INTEGER,
             SaO2 INTEGER,
             trnd_hrv INTEGER,
             recovery INTEGER,
             sdnn INT,
-            sdsd INT
+            sdsd INT,
+            dBeats INT,
+            sBeats INT,
+            session_hrv INT,
+            NN50 INT,
+            NN20 INT,
+            sd1 INT,
+            sd2 INT,
+            lf INT,
+            hf INT,
+            vlf INT,
+            pNN50 INT,
+            lfnu INT,
+            hfnu INT,
+            meanhr INT,
+            meanrr INT
         )
     ''')
 
@@ -297,65 +321,14 @@ def parse_fit_file(file_path, activity_id):
     return session_data
 
 
-# Insert the session data into the database
-
-def insert_data_into_db(data):
-    conn = sqlite3.connect('e:/jheel_dev/DataBasesDev/artemis_hrv.db')
-    cursor = conn.cursor()
-
-    # Specify the fields you care about
-    specific_fields = ['fat','name','Total Fat','Carbs','Total Carbs',
-                    'VO2maxSmooth',
-                    'VO2maxSession',
-                    'CardiacDrift',
-                    'CooperTest',
-                    'Steps',
-                    'stress_hrpa',
-                    'HR-RS_Deviation Index',
-                    'hrv_sdrr_f',
-                    'hrv_pnn50',
-                    'hrv_pnn20',
-                    'RMSSD',
-                    'lnRMSSD',
-                    'SDNN',
-                    'SDSD',
-                    'NN50',
-                    'NN20',
-                    'pnn20',
-                    'Long',
-                    'Short', 
-                    'Ectopic_S',
-                    'hrv_rmssd',
-                    'SD2',
-                    'SD1',
-                    'LF',
-                    'HF',
-                    'VLF','pNN50','LFnu','HFnu','MeanHR', 'MeanRR']  # Replace with your specific fields
-
-    for session in data:
-        # Check if all specific fields in the session dictionary are None
-        if all(session[field] is None for field in specific_fields):
-            # If they are, skip this iteration
-            continue
-
-        # The activity_id does not exist in the table, so insert the new record
-        cursor.execute('''
-            INSERT OR REPLACE INTO ArtemistblV41 (activity_id, timestamp, distance, sport, hrv, fat, total_fat,carbs, total_carbs,  VO2maxSmooth, steps, stress_hrpa, HR_RS_Deviation_Index ,hrv_sdrr_f, hrv_pnn50, hrv_pnn20, rmssd, lnrmssd, sdnn, sdsd, nn50, nn20, pnn20, Long, Short, Ectopic_S, hrv_rmssd, VO2maxSession, CardiacDrift, CooperTest, SD2, SD1, HF, LF, VLF, pNN50, LFnu, HFnu, MeanHR, MeanRR)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ''', (session['activity_id'], session['name'],session['timestamp'], session['distance'], session['sport'], session['hrv'], session['fat'], session['Total Fat'],session['Carbs'], session['Total Carbs'],session['VO2maxSmooth'], session['Steps'], session['stress_hrpa'], session['HR-RS_Deviation Index'],session['hrv_sdrr_f'], session['hrv_pnn50'], session['hrv_pnn20'], session['RMSSD'], session['lnRMSSD'], session['SDNN'], session['SDSD'], session['NN50'], session['NN20'], session['pnn20'], session['Long'], session['Short'], session['Ectopic_S'], session['hrv_rmssd'], session['VO2maxSession'], 
-              session['CardiacDrift'], session['CooperTest'], session['SD2'], session['SD1'], session['HF'] , session['LF'], session['LF'], session['pNN50'], session['LFnu'], session['HFnu'],
-              session['MeanRR'], session['MeanHR']))
-
-    conn.commit()
-    conn.close()
 
 
 # run the script as wanted - main function - jHeel artemis data
 if __name__ == "__main__":  
     create_table_if_not_exists()
 try:
-    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities2025')
-    # insert_data_into_db(all_session_data)
+    # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
     logging.info('All data inserted successfully.')
     print('All data inserted successfully (c)smacrico ')
 except Exception as e:

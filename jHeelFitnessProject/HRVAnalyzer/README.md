@@ -30,3 +30,44 @@ Process all FIT files in the activitiesTest folder
 Store HRV data in the astremis_hrv.db database
 Create analysis views
 Provide HRV trend analysis
+
+## gert data from artemis_hrv table vcreated by f3b v5.0 script
+Key changes made to the code:
+
+Added MySQL database connectivity using mysql.connector
+Removed the add_session method since data is now fetched from the database
+Added a load_data_from_db method to fetch data from the hrv_sessionsDEV table
+Added error handling for database operations
+Added a generate_summary_stats method for additional statistical analysis
+Modified the main function to showcase all available functionality
+Maintained all existing visualization and analysis capabilities
+
+## important noted
+
+Update the database configuration in the db_config dictionary with your actual database credentials:
+
+
+host
+database name (currently set to 'artemis_hrv')
+username
+password
+
+
+Make sure your hrv_sessionsDEV table has all the required columns:
+
+
+date
+sd1
+sd2
+sdnn
+mean_rr
+mean_hr
+rmssd
+pnn50
+vlf
+lf
+hf
+lf_nu
+hf_nu
+
+The code will automatically calculate derived metrics like sd2_sd1_ratio and lf_hf_ratio from the base measurements.

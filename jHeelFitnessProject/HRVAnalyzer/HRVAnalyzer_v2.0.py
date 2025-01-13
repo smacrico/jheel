@@ -89,7 +89,7 @@ class HRVProcessor:
                 s.hrv_sdrr_f,
                 s.hrv_sdrr_l
             FROM hrv_recordsDEV1 r
-            JOIN hrv_sessions s ON r.activity_id = s.activity_id
+            JOIN hrv_sessionsDEV1 s ON r.activity_id = s.activity_id
         """)
 
         conn.commit()
@@ -278,14 +278,19 @@ class HRVProcessor:
         result = cursor.fetchone()
         conn.close()
         
-        if result:
-            rmssd_score = min(100, result[0] / 2)
-            sdrr_score = min(100, result[1] / 2)
-            pnn50_score = result[2]
-            
-            recovery_score = (rmssd_score + sdrr_score + pnn50_score) / 3
-            return round(recovery_score, 2)
+        if result and result[0] is not None and result[1] is not None and result[2] is not None:
+            try:
+                rmssd_score = min(100, float(result[0]) / 2)
+                sdrr_score = min(100, float(result[1]) / 2)
+                pnn50_score = float(result[2])
+                
+                recovery_score = (rmssd_score + sdrr_score + pnn50_score) / 3
+                return round(recovery_score, 2)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Error calculating recovery score for activity {activity_id}: {e}")
+                return None
         return None
+
 
 def process_activities_folder(folder_path):
     """Process all FIT files in the specified folder"""
@@ -305,12 +310,30 @@ def process_activities_folder(folder_path):
 
 def main():
     # Process activities from the test folder
-    # activities_folder = "activitiesTest"
-    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
-    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
+    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
     
     if processor:
-        # Example analysis
+        # Connect to database to get activity IDs
+        conn = sqlite3.connect(processor.db_path)
+        cursor = conn.cursor()
+        
+        # Get all activity IDs
+        cursor.execute("SELECT activity_id FROM hrv_sessionsDEV1")
+        activities = cursor.fetchall()
+        conn.close()
+        
+        # Print recovery scores for each activity
+        print("\nRecovery Scores:")
+        for activity in activities:
+            activity_id = activity[0]
+            recovery_score = processor.calculate_recovery_score(activity_id)
+            if recovery_score is not None:
+                print(f"Activity {activity_id}: Recovery Score = {recovery_score}")
+            else:
+                print(f"Activity {activity_id}: Unable to calculate recovery score (insufficient data)")
+        
+        # Existing trend analysis
         print("\nAnalyzing HRV trends for the last 30 days:")
         trends = processor.analyze_hrv_trends()
         if trends:
