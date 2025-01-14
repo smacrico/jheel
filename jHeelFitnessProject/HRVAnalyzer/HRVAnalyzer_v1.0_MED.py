@@ -35,7 +35,7 @@ class HRVProcessor:
 
         # Create HRV Records table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS hrv_recordsDEV1 (
+            CREATE TABLE IF NOT EXISTS hrv_recordsMED (
                 activity_id TEXT,
                 record INTEGER,
                 timestamp DATETIME,
@@ -49,7 +49,7 @@ class HRVProcessor:
 
         # Create HRV Sessions table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS hrv_sessionsDEV1 (
+            CREATE TABLE IF NOT EXISTS hrv_sessionsMED (
                 activity_id TEXT PRIMARY KEY,
                 timestamp DATETIME,
                 min_hr INTEGER,
@@ -64,7 +64,7 @@ class HRVProcessor:
 
         # Create views
         cursor.execute("""
-            CREATE VIEW IF NOT EXISTS daily_hrv_summaryDEV1 AS
+            CREATE VIEW IF NOT EXISTS daily_hrv_summaryMED AS
             SELECT 
                 DATE(timestamp) as date,
                 AVG(hrv_rmssd) as avg_rmssd,
@@ -74,12 +74,12 @@ class HRVProcessor:
                 AVG(hrv_pnn20) as avg_pnn20,
                 AVG(stress_hrpa) as avg_stress_hrpa,
                 MIN(min_hr) as lowest_hr
-            FROM hrv_sessionsDEV1
+            FROM hrv_sessionsMED
             GROUP BY DATE(timestamp)
         """)
 
         cursor.execute("""
-            CREATE VIEW IF NOT EXISTS detailed_hrv_analysisDEV1 AS
+            CREATE VIEW IF NOT EXISTS detailed_hrv_analysisMED AS
             SELECT 
                 r.activity_id,
                 r.timestamp,
@@ -88,7 +88,7 @@ class HRVProcessor:
                 s.hrv_rmssd,
                 s.hrv_sdrr_f,
                 s.hrv_sdrr_l
-            FROM hrv_recordsDEV1 r
+            FROM hrv_recordsMED r
             JOIN hrv_sessions s ON r.activity_id = s.activity_id
         """)
 
@@ -102,7 +102,7 @@ class HRVProcessor:
             
             # Check if record exists
             cursor.execute("""
-                SELECT 1 FROM hrv_recordsDEV1 
+                SELECT 1 FROM hrv_recordsMED 
                 WHERE activity_id = ? AND record = ?
             """, (activity_id, record_num))
             
@@ -119,7 +119,7 @@ class HRVProcessor:
                 )
                 
                 cursor.execute("""
-                    INSERT INTO hrv_recordsDEV1 
+                    INSERT INTO hrv_recordsMED 
                     (activity_id, record, timestamp, hrv_s, hrv_btb, hrv_hr, stress_hrp)
                     VALUES (?, ?, ?, ?, ?, ?,?)
                 """, record)
@@ -139,7 +139,7 @@ class HRVProcessor:
             
             # Check if session exists
             cursor.execute("""
-                SELECT 1 FROM hrv_sessionsDEV1 
+                SELECT 1 FROM hrv_sessionsMED 
                 WHERE activity_id = ?
             """, (activity_id,))
             
@@ -158,7 +158,7 @@ class HRVProcessor:
                 )
                 
                 cursor.execute("""
-                    INSERT INTO hrv_sessionsDEV1 
+                    INSERT INTO hrv_sessionsMED 
                     (activity_id, timestamp, min_hr, hrv_rmssd, hrv_sdrr_f, 
                      hrv_sdrr_l, hrv_pnn50, hrv_pnn20, stress_hrpa)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -233,7 +233,7 @@ class HRVProcessor:
                 avg_pnn50,
                 avg_pnn20,
                 avg_stress_hrpa
-            FROM daily_hrv_summaryDEV1
+            FROM daily_hrv_summaryMED
             ORDER BY date DESC
             LIMIT ?
         """
@@ -271,7 +271,7 @@ class HRVProcessor:
                 hrv_pnn50,
                 stress_hrpa,
                 min_hr
-            FROM hrv_sessionsDEV1
+            FROM hrv_sessionsMED
             WHERE activity_id = ?
         """, (activity_id,))
         
@@ -306,8 +306,8 @@ def process_activities_folder(folder_path):
 def main():
     # Process activities from the test folder
     # activities_folder = "activitiesTest"
-    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
-    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
+    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
     
     if processor:
         # Example analysis

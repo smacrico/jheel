@@ -18,13 +18,13 @@ class EnhancedHRVAnalysis:
             cursor = conn.cursor()
             
             # Drop existing tables if they exist
-            cursor.execute('DROP TABLE IF EXISTS latest_hrv_records')
-            cursor.execute('DROP TABLE IF EXISTS hrv_status_analysis')
-            cursor.execute('DROP TABLE IF EXISTS hrv_summary_stats')
+            cursor.execute('DROP TABLE IF EXISTS latest_hrv_recordsV2')
+            cursor.execute('DROP TABLE IF EXISTS hrv_status_analysisV2')
+            cursor.execute('DROP TABLE IF EXISTS hrv_summary_statsV2')
             
             # Create table for latest records with both numeric and text columns
             cursor.execute('''
-                CREATE TABLE latest_hrv_records (
+                CREATE TABLE latest_hrv_recordsV2 (
                     record_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     metric_name TEXT,
@@ -35,7 +35,7 @@ class EnhancedHRVAnalysis:
             
             # Create table for HRV status analysis
             cursor.execute('''
-                CREATE TABLE hrv_status_analysis (
+                CREATE TABLE hrv_status_analysisV2 (
                     analysis_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     metric_name TEXT,
@@ -45,7 +45,7 @@ class EnhancedHRVAnalysis:
             
             # Create table for summary statistics
             cursor.execute('''
-                CREATE TABLE hrv_summary_stats (
+                CREATE TABLE hrv_summary_statsV2 (
                     stat_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     metric_name TEXT,
@@ -82,7 +82,7 @@ class EnhancedHRVAnalysis:
             
             # First, let's modify the table structure to accommodate text values
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS latest_hrv_records (
+                CREATE TABLE IF NOT EXISTS latest_hrv_recordsV2 (
                     record_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     metric_name TEXT,
@@ -107,7 +107,7 @@ class EnhancedHRVAnalysis:
                             value_text = str(value)
                     
                     cursor.execute('''
-                        INSERT INTO latest_hrv_records 
+                        INSERT INTO latest_hrv_recordsV2 
                         (timestamp, metric_name, metric_value_num, metric_value_text)
                         VALUES (?, ?, ?, ?)
                     ''', (current_time, column, value_num, value_text))
@@ -157,7 +157,7 @@ class EnhancedHRVAnalysis:
             for column in summary_stats.columns:
                 if column != 'date':  # Skip date column
                     cursor.execute('''
-                        INSERT INTO hrv_summary_stats 
+                        INSERT INTO hrv_summary_statsV2 
                         (timestamp, metric_name, count, mean, std, min, q25, median, q75, max)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (

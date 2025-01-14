@@ -63,7 +63,7 @@ def execute_fbb_hrv_plugin(fit_file_path, activity_id):
                 cursor.execute('''
                     INSERT INTO hrv_sessionsFBB (
                         activity_id, timestamp, sport, min_hr, hrv_rmssd, hrv_sdrr_f, 
-                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20,  armssd, asdnn, SaO2, trnd_hrv, recovery, sdnn, sdsd, dBeats, sBeats, session_hrv, NN50, NN20, sd1, sd2, lf, hf, vlf, pNN50, lfnu, hfnu, meanhr, meanrr
+                        hrv_sdrr_l, hrv_pnn50, hrv_pnn20,  armssd, asdnn, SaO2, trnd_hrv, recovery, sdnn, sdsd, dBeats, sBeats, session_hrv, NN50, NN20, sd1, sd2, lf, hf, vlf, pNN50, lf_nu, hf_nu, mean_hr, mean_rr
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ''', (
@@ -169,10 +169,10 @@ def create_table_if_not_exists():
             hf INT,
             vlf INT,
             pNN50 INT,
-            lfnu INT,
-            hfnu INT,
-            meanhr INT,
-            meanrr INT
+            lf_nu INT,
+            hf_nu INT,
+            mean_hr INT,
+            mean_rr INT
         )
     ''')
 
@@ -264,10 +264,10 @@ def parse_fit_file(file_path, activity_id):
                 HF = field_dict.get('HF')
                 VLF = field_dict.get('VLF')
                 pNN50 = field_dict.get('pNN50')
-                LFnu = field_dict.get('LFnu')
-                HFnu = field_dict.get('HFnu')
-                MeanHR = field_dict.get('Mean HR')
-                MeanRR = field_dict.get('Mean RR')
+                LF_nu = field_dict.get('LFnu')
+                HF_nu = field_dict.get('HFnu')
+                Mean_HR = field_dict.get('Mean HR')
+                Mean_RR = field_dict.get('Mean RR')
 
                 if steps is None:
                     steps = field_dict.get('steps')
@@ -309,10 +309,10 @@ def parse_fit_file(file_path, activity_id):
                     'LF' : LF,
                     'VLF' : VLF,
                     'pNN50' : pNN50,
-                    'LFnu'  : LFnu,
-                    'HFnu' : HFnu,
-                    'MeanHR' : MeanHR,
-                    'MeanRR' : MeanRR
+                    'LFnu'  : LF_nu,
+                    'HFnu' : HF_nu,
+                    'MeanHR' : Mean_HR,
+                    'MeanRR' : Mean_RR
 
                 })
                 
@@ -327,8 +327,8 @@ def parse_fit_file(file_path, activity_id):
 if __name__ == "__main__":  
     create_table_if_not_exists()
 try:
-    # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities2025')
-    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
+    all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    # all_session_data = parse_all_fit_files_in_folder('c:/users/stma/healthdata/fitfiles/activities')
     logging.info('All data inserted successfully.')
     print('All data inserted successfully (c)smacrico ')
 except Exception as e:
