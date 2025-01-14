@@ -71,3 +71,58 @@ lf_nu
 hf_nu
 
 The code will automatically calculate derived metrics like sd2_sd1_ratio and lf_hf_ratio from the base measurements.
+
+## all HRV merged
+## script (merged) - jHeel_HRV_analysis by smacrico
+
+### Additional Enhanced Analyses to Develop:
+
+Pattern Recognition:
+
+
+Identify circadian rhythm patterns in HRV
+Detect anomalous HRV patterns
+Analyze recovery patterns after stress events
+
+
+Predictive Analytics:
+
+
+Predict potential stress events based on HRV trends
+Forecast recovery needs based on accumulated stress
+Estimate training readiness
+
+
+Advanced Metrics:
+
+
+HRV Complexity Index using multiple time scales
+Autonomic Nervous System Balance Score
+Recovery Efficiency Index
+Training Load vs Recovery Balance
+
+
+Correlation Analysis:
+
+
+Cross-correlation between different HRV metrics
+Time-lagged correlations for cause-effect analysis
+Seasonal and temporal pattern analysis
+
+
+Health Risk Indicators:
+
+
+Autonomic dysfunction risk score
+Stress accumulation index
+Recovery capacity assessment
+Cardiovascular health indicators
+
+
+Performance Metrics:
+
+
+Training adaptation score
+Recovery optimization index
+Stress resilience score
+Readiness for performance score
