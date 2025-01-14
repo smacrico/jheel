@@ -130,7 +130,7 @@ class EnhancedHRVAnalysis:
             
             for metric, status in status_dict.items():
                 cursor.execute('''
-                    INSERT INTO hrv_status_analysis (timestamp, metric_name, status)
+                    INSERT INTO hrv_status_analysisV2 (timestamp, metric_name, status)
                     VALUES (?, ?, ?)
                 ''', (current_time, metric, status))
             
@@ -219,7 +219,7 @@ class EnhancedHRVAnalysis:
         """Fetch HRV data from the SQLite database"""
         try:
             conn = sqlite3.connect(self.db_path)
-            query = "SELECT * FROM hrv_sessionsDEV ORDER BY date"
+            query = "SELECT * FROM hrv_sessionsFBB ORDER BY date"
             self.hrv_log = pd.read_sql_query(query, conn)
             
         except sqlite3.Error as e:
