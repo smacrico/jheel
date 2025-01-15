@@ -89,7 +89,7 @@ class HRVProcessor:
                 s.hrv_sdrr_f,
                 s.hrv_sdrr_l
             FROM hrv_recordsMED r
-            JOIN hrv_sessions s ON r.activity_id = s.activity_id
+            JOIN hrv_sessionsMED s ON r.activity_id = s.activity_id
         """)
 
         conn.commit()
@@ -306,8 +306,8 @@ def process_activities_folder(folder_path):
 def main():
     # Process activities from the test folder
     # activities_folder = "activitiesTest"
-    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
-    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
+    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
     
     if processor:
         # Example analysis

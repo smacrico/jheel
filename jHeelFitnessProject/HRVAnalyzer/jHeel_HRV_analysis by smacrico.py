@@ -259,8 +259,12 @@ class UnifiedHRVAnalysis:
         try:
             trends = {}
             
-            # Define metrics to analyze first
-            metrics_to_analyze = ['hrv_rmssd', 'lf_hf_ratio', 'total_power']
+            # Calculate health metrics to get recovery_score
+            health_metrics = self.calculate_health_metrics()
+            self.hrv_data['recovery_score'] = health_metrics['recovery_score']
+            
+            # Define metrics to analyze
+            metrics_to_analyze = ['hrv_rmssd', 'lf_hf_ratio', 'total_power', 'recovery_score']
             
             # Calculate linear trends for key metrics
             for metric in metrics_to_analyze:
@@ -282,16 +286,26 @@ class UnifiedHRVAnalysis:
                 else:
                     trends[f'{metric_name}_relative_change'] = 0.0
             
+            # Clean up temporary column
+            self.hrv_data = self.hrv_data.drop('recovery_score', axis=1, errors='ignore')
+            
             return trends
             
         except Exception as e:
             logger.error(f"Error calculating trends: {e}")
             raise
+        
     
-    
-    def generate_risk_assessment(self) -> Dict[str, float]:
+    def generate_risk_assessment(self) -> Dict[str, pd.Series]:
         """Generate health risk assessment based on HRV patterns"""
         try:
+            # Calculate health metrics first to get stress_index and recovery_score
+            health_metrics = self.calculate_health_metrics()
+            
+            # Add required metrics to hrv_data temporarily
+            self.hrv_data['stress_index'] = health_metrics['stress_index']
+            self.hrv_data['recovery_score'] = health_metrics['recovery_score']
+            
             risk_scores = {}
             
             # Autonomic Dysfunction Risk
@@ -314,6 +328,9 @@ class UnifiedHRVAnalysis:
                 (1 - self.hrv_data['total_power'].rolling(30).mean() / 10000) * 0.3
             ) * 100
             
+            # Remove temporary columns
+            self.hrv_data = self.hrv_data.drop(['stress_index', 'recovery_score'], axis=1, errors='ignore')
+            
             return risk_scores
             
         except Exception as e:
@@ -325,11 +342,14 @@ class UnifiedHRVAnalysis:
         try:
             conn = sqlite3.connect(self.db_path)
             
-            # Calculate all metrics first
+            # Calculate all metrics in the correct order
             health_metrics = self.calculate_health_metrics()
-            patterns = self.analyze_patterns()  # This will now work because health_metrics are calculated first
-            trends = self.calculate_trends()
+            patterns = self.analyze_patterns()
             risks = self.generate_risk_assessment()
+            
+            # Add required metrics to hrv_data temporarily
+            self.hrv_data['stress_index'] = health_metrics['stress_index']
+            self.hrv_data['recovery_score'] = health_metrics['recovery_score']
             
             # Prepare daily metrics
             daily_metrics = pd.DataFrame({
@@ -343,9 +363,48 @@ class UnifiedHRVAnalysis:
                 'training_readiness': health_metrics['training_readiness']
             })
             
+            # Prepare pattern analysis data
+            pattern_analysis = pd.DataFrame({
+                'date': self.hrv_data['date'],
+                'circadian_pattern_score': patterns['circadian_consistency'],
+                'anomaly_score': patterns['anomaly_scores'],
+                'pattern_consistency': patterns['recovery_consistency'],
+                'adaptation_capacity': patterns['adaptation_capacity'],
+                'recovery_pattern_quality': patterns['recovery_consistency']
+            })
+            
+            # Prepare weekly trends data
+            weekly_data = self.hrv_data.set_index('date').resample('W').mean()
+            weekly_trends = pd.DataFrame({
+                'week_start': weekly_data.index,
+                'rmssd_trend': weekly_data['hrv_rmssd'],
+                'lf_hf_trend': weekly_data['lf_hf_ratio'],
+                'stress_adaptation_score': 100 - weekly_data['lf_hf_ratio'],
+                'training_load_score': weekly_data['total_power'],
+                'recovery_efficiency': weekly_data['sdnn'],
+                'performance_readiness': weekly_data['total_power'] / weekly_data['lf_hf_ratio']
+            })
+            
+            # Prepare health indicators data
+            health_indicators = pd.DataFrame({
+                'date': self.hrv_data['date'],
+                'autonomic_risk_score': risks['autonomic_risk'],
+                'stress_accumulation_index': risks['stress_accumulation'],
+                'cardiovascular_health_score': health_metrics['cv_health_score'],
+                'recovery_capacity': health_metrics['recovery_score'],
+                'overall_health_score': (health_metrics['cv_health_score'] + 
+                                    health_metrics['recovery_score']) / 2
+            })
+            
             # Store in database
             daily_metrics.to_sql('hrv_unified_daily_metrics', conn, 
                             if_exists='replace', index=False)
+            pattern_analysis.to_sql('hrv_unified_pattern_analysis', conn,
+                                if_exists='replace', index=False)
+            weekly_trends.to_sql('hrv_unified_weekly_trends', conn,
+                            if_exists='replace', index=True)
+            health_indicators.to_sql('hrv_unified_health_indicators', conn,
+                                if_exists='replace', index=False)
             
             logger.info("Stored analysis results successfully")
             
@@ -354,7 +413,11 @@ class UnifiedHRVAnalysis:
             raise
         finally:
             if conn:
-                conn.close() 
+                conn.close()
+            # Clean up temporary columns
+            self.hrv_data = self.hrv_data.drop(['stress_index', 'recovery_score'], 
+                                            axis=1, errors='ignore')
+                
                 
     def create_visualization_dashboard(self) -> None:
             """Create comprehensive HRV analysis dashboard"""
@@ -481,34 +544,41 @@ class UnifiedHRVAnalysis:
             trends = self.calculate_trends()
             
             latest_date = self.hrv_data['date'].max()
+            
+            # Get available trend metrics
+            hrv_trend = trends.get('hrv_rmssd_trend', 0)
+            lf_hf_trend = trends.get('lf_hf_ratio_trend', 0)
+            recovery_trend = trends.get('recovery_score_trend', 0)
+            
             report = f"""
-HRV Analysis Summary Report - {latest_date.strftime('%Y-%m-%d')}
+    HRV Analysis Summary Report - {latest_date.strftime('%Y-%m-%d')}
 
-Key Metrics (latest values):
-- Recovery Score: {metrics['recovery_score'].iloc[-1]:.1f}/100
-- Training Readiness: {metrics['training_readiness'].iloc[-1]:.1f}/100
-- Autonomic Balance: {metrics['autonomic_balance'].iloc[-1]:.1f}/100
-- Stress Index: {metrics['stress_index'].iloc[-1]:.1f}/100
+    Key Metrics (latest values):
+    - Recovery Score: {metrics['recovery_score'].iloc[-1]:.1f}/100
+    - Training Readiness: {metrics['training_readiness'].iloc[-1]:.1f}/100
+    - Autonomic Balance: {metrics['autonomic_balance'].iloc[-1]:.1f}/100
+    - Stress Index: {metrics['stress_index'].iloc[-1]:.1f}/100
 
-Health Risk Assessment:
-- Autonomic Risk: {risks['autonomic_risk'].iloc[-1]:.1f}%
-- Cardiovascular Risk: {risks['cardiovascular_risk'].iloc[-1]:.1f}%
-- Stress Accumulation: {risks['stress_accumulation'].iloc[-1]:.1f}%
+    Health Risk Assessment:
+    - Autonomic Risk: {risks['autonomic_risk'].iloc[-1]:.1f}%
+    - Cardiovascular Risk: {risks['cardiovascular_risk'].iloc[-1]:.1f}%
+    - Stress Accumulation: {risks['stress_accumulation'].iloc[-1]:.1f}%
 
-7-Day Trends:
-- RMSSD Trend: {trends['hrv_rmssd_trend']:.2f}
-- LF/HF Ratio Trend: {trends['lf_hf_ratio_trend']:.2f}
-- Recovery Score Trend: {trends['recovery_score_trend']:.2f}
+    7-Day Trends:
+    - RMSSD Trend: {hrv_trend:.2f}
+    - LF/HF Ratio Trend: {lf_hf_trend:.2f}
+    - Recovery Score Trend: {recovery_trend:.2f}
 
-Recommendations:
-{self._generate_recommendations()}
-"""
+    Recommendations:
+    {self._generate_recommendations()}
+    """
             return report
             
         except Exception as e:
             logger.error(f"Error generating summary report: {e}")
             raise
-
+        
+        
     def _generate_recommendations(self) -> str:
         """Generate personalized recommendations based on HRV analysis"""
         metrics = self.calculate_health_metrics()
@@ -562,8 +632,8 @@ if __name__ == "__main__":
         analyzer = UnifiedHRVAnalysis()
         
         # Get specific date range analysis
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 14)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 15)
         date_mask = (analyzer.hrv_data['date'] >= start_date) & (analyzer.hrv_data['date'] <= end_date)
         period_data = analyzer.hrv_data[date_mask]
         
@@ -580,7 +650,7 @@ if __name__ == "__main__":
         print(f"Average Stress Index: {metrics['stress_index'][date_mask].mean():.2f}")
         
         # Generate weekly analysis
-        weekly_stats = period_data.resample('W', on='date').mean()
+        weekly_stats = period_data.set_index('date').resample('W').mean()
         print("\nWeekly Trends:")
         print(weekly_stats[['hrv_rmssd', 'lf_hf_ratio', 'total_power']].round(2))
         

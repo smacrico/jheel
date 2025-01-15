@@ -310,8 +310,8 @@ def process_activities_folder(folder_path):
 
 def main():
     # Process activities from the test folder
-    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
-    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
+    processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities')
+    # processor = process_activities_folder('c:/users/stma/healthdata/fitfiles/activities2025')
     
     if processor:
         # Connect to database to get activity IDs
