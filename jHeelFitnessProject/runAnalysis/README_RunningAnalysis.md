@@ -118,3 +118,7 @@ Filters out rows with NaN values before calculating zones
 Only includes zones that have actual data
 Handles the case where there might not be enough valid data
 Provides helpful error messages if something goes wrong
+
+
+
+## store metrics brake down into table not only print v.41_dev of script
